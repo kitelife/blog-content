@@ -26,17 +26,29 @@ SOCIAL = (('You can add links in your config file', '#'),
 DEFAULT_PAGINATION = 10
 
 THEME = 'my-gum'
-DEFAULT_CATEGORY = u'其他'
+
 DATE_FORMATS = {
 	'zh': '%Y-%m-%d %a'
 }
 RELATIVE_URLS = True
+
 DISQUS_SITENAME = "xiayfblackwhite"
+
+#ARTICLE_DIR = 'posts'
 ARTICLE_URL = '{date:%Y}/{date:%m}/{date:%d}/{slug}/'
 ARTICLE_SAVE_AS = '{date:%Y}/{date:%m}/{date:%d}/{slug}/index.html'
 
+DEFAULT_CATEGORY = u'其他'
+
+PAGE_DIR = 'pages'
+PAGE_URL = 'pages/{slug}.html'
+PAGE_SAVE_AS = 'pages/{slug}.html'
+DISPLAY_PAGES_ON_MENU = True
+
 GITHUB_URL = 'http://github.com/youngsterxyf'
-TWITTER_URL = ''
+TWITTER_URL = 'https://twitter.com/youngsterxyf'
+WEIBO_URL = 'http://weibo.com/u/1855563263'
+DOUBAN_URL = 'http://www.douban.com/people/youngster21/'
 FACEBOOK_URL = ''
 GOOGLEPLUS_URL = ''
 
