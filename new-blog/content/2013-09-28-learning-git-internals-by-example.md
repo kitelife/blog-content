@@ -1,7 +1,7 @@
 Title: 通过示例学习Git内部构造（译）
 Date: 2013-09-28
 Author: youngsterxyf
-Slug: learning-git-internal-by-example
+Slug: learning-git-internals-by-example
 Tags: Git, 翻译
 
 原文：[Learning Git Internals by Example](http://teohm.github.io/blog/2011/05/30/learning-git-internals-by-example/)
