@@ -26,9 +26,9 @@ Tag: 监控, 架构, Web, 工作笔记
 
 该URL监控功能基于的网站Web架构也是上了一定流量的网站通常采用的架构，大致如下图所示：
 
-![nginx-frontend-forward](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/nginx_frontend_forward.png)
+![nginx-frontend-forward](/assets/uploads/pics/nginx_frontend_forward.png)
 
-[高清无码大图](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/nginx_frontend_forward.png)
+[高清无码大图](/assets/uploads/pics/nginx_frontend_forward.png)
 
 该Web架构中，使用一台Nginx服务器作为统一入口来接收所有请求，对请求进行规则匹配和负载均衡后转发到某台后端实际提供服务的服务器上。**在转发请求之前，该Nginx服务器可能会因为某些原因对请求的某些参数（如请求的头部字段）进行修改**。
 
@@ -102,9 +102,9 @@ Tag: 监控, 架构, Web, 工作笔记
 
 如果真的成了性能瓶颈，可以对前端转发机Nginx的功能进行拆分，即尽可能简化前端转发机Nginx的配置，如每个虚拟主机配置为仅转发请求。在前端转发机与后端服务器之间增加一层负载均衡服务器，负载均衡、访问控制、rewrite等功能放在该层完成。演变后的系统结构图如下所示：
 
-![add_load_balance_level](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/add_load_balance_level.png)
+![add_load_balance_level](/assets/uploads/pics/add_load_balance_level.png)
 
-[高清无码大图](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/add_load_balance_level.png)
+[高清无码大图](/assets/uploads/pics/add_load_balance_level.png)
 
 此外，我想只能加强服务器硬件或者将系统拆分成多个小系统了吧。
 

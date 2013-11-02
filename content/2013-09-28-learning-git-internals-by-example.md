@@ -30,7 +30,7 @@ Tags: Git, 翻译
 
 我发现这个模型非常优雅。用一个小小的图表就能完全展现，也易于理解记忆。
 
-![Big Picture](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/big-picture.png)
+![Big Picture](/assets/uploads/pics/git-internals/big-picture.png)
 
 ### 实体
 
@@ -74,7 +74,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
     :::text
     $ git init canai
 
-![初始化代码仓库后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/init.png)
+![初始化代码仓库后](/assets/uploads/pics/git-internals/init.png)
 
 发生了什么呢？
 
@@ -92,7 +92,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
     $ echo "A roti canai project." >> README
     $ git add README
 
-![添加新文件后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/new-file.png)
+![添加新文件后](/assets/uploads/pics/git-internals/new-file.png)
 
 发生了什么呢？
 
@@ -117,7 +117,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
      1 files changed, 1 insertions(+), 0 deletions(-)
      create mode 100644 README
 
-![首次提交后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/first-commit.png)
+![首次提交后](/assets/uploads/pics/git-internals/first-commit.png)
 
 发生了什么呢？
 
@@ -151,7 +151,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
     $ echo "Welcome everyone." >> README
     $ git add README
 
-![添加一个修改过的文件后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/modified-file.png)
+![添加一个修改过的文件后](/assets/uploads/pics/git-internals/modified-file.png)
 
 发生了什么呢？
 
@@ -176,7 +176,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
     $ echo "[[TBD]] manual toc" >> doc/manual.txt
     $ git add doc
 
-![向子目录添加文件后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/subdir.png)
+![向子目录添加文件后](/assets/uploads/pics/git-internals/subdir.png)
 
 发生了什么呢？
 
@@ -202,7 +202,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
      2 files changed, 2 insertions(+), 0 deletions(-)
      create mode 100644 doc/manual.txt
 
-![第二次提交后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/second-commit.png)
+![第二次提交后](/assets/uploads/pics/git-internals/second-commit.png)
 
 发生了什么呢？
 
@@ -241,7 +241,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
     :::text
     $ git tag -a -m'this is annotated tag' v0.1 d9976
 
-![添加一个注释标签后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/annotated-tag.png)
+![添加一个注释标签后](/assets/uploads/pics/git-internals/annotated-tag.png)
 
 发生了什么呢？
 
@@ -267,7 +267,7 @@ Git有一种特殊的引用，称为*符号引用*。它并不直接指向一个
     :::text
     $ git tag root-commit d9976
 
-![添加一个新的轻量标签后](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-internals/new-tag.png)
+![添加一个新的轻量标签后](/assets/uploads/pics/git-internals/new-tag.png)
 
 发生了什么呢？
 

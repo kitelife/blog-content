@@ -42,7 +42,7 @@ Tags: 腾讯, 微信, 架构
 
 ### 三层后台架构
 
-![Arch of weixin backend](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/arch-of-weixin-backend.png)
+![Arch of weixin backend](/assets/uploads/pics/arch-of-weixin-backend.png)
 
 ### 统一的RPC框架
 

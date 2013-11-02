@@ -53,7 +53,7 @@ Tags: 服务器, Linux, Git, Golang, Python
 
 我们的Git工作流如图所示：
 
-![our-git-workflow](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/git-workflow.png)
+![our-git-workflow](/assets/uploads/pics/git-workflow.png)
 
 Git远程服务器端和办公机端版本库都保持两个共享分支：master和develop。master分支是稳定分支，其最新代码与生产服务器上的代码一致。develop是测试分支。
 
@@ -156,7 +156,7 @@ Git远程服务器端和办公机端版本库都保持两个共享分支：maste
 
 ### 规范宣导
 
-为了推行规范，需要和组内运营开发同事说明**规范的必要性**、**如何执行规范（如Git的使用、Git工作流）**、**哪些东西可以从代码文档中查询**等，所以简单了做了个分享，ppt见：[规范化运营开发](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/blob/master/assets/files/s-o-p.pdf)。
+为了推行规范，需要和组内运营开发同事说明**规范的必要性**、**如何执行规范（如Git的使用、Git工作流）**、**哪些东西可以从代码文档中查询**等，所以简单了做了个分享，ppt见：[规范化运营开发](/assets/uploads/files/s-o-p.pdf)。
 
 ### 如何推行“定期code review”
 

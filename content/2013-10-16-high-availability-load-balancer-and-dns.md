@@ -15,14 +15,14 @@ Tags: 高可用, 负载均衡, HAProxy, Keepalived, HAProxyConsole, DNS, BIND
 另外，由于HAProxy的负载均衡任务可能比较多，靠人工修改配置来增删改任务不方便可靠，所以实现了一个简单的HAProxy管理系统，
 以后经实际使用验证和完善会开放源码。
 
-![high availability load balancer](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/high-availability-load-balancer.png)
+![high availability load balancer](/assets/uploads/pics/high-availability-load-balancer.png)
 
 
 ### 缓存DNS
 
 先以www.qq.com为例，解释一下域名解析过程：
 
-![resolve qq.com](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/pics/resolve-qq-com.jpg)
+![resolve qq.com](/assets/uploads/pics/resolve-qq-com.jpg)
 
 1.
 用户向Local DNS发起www.qq.com.查询请求；
@@ -58,4 +58,4 @@ Local DNS一般由网络运营商（如电信、网通等）提供。
 ------
 
 在完成该工作后，我编写了一份安装配置文档，方便其他同事参考。文档见：
-[HAProxy+HAProxyConsole+Keepalived+BIND安装配置文档.pdf](https://raw.github.com/youngsterxyf/youngsterxyf.github.com/master/assets/files/high-availability-load-balancer-and-dns.pdf)。
+[HAProxy+HAProxyConsole+Keepalived+BIND安装配置文档.pdf](/assets/uploads/files/high-availability-load-balancer-and-dns.pdf)。
