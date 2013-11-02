@@ -1,7 +1,7 @@
 Title: Python学习路线(针对具备一定编程经验者)
 Date: 2012-02-21
 Author: youngsterxyf
-Slug: the-path-of-learing-python
+Slug: the-path-of-learning-python
 Tags: Python
 
 相比C,C++,JAVA等编程语言，Python是易学的。但要想深入地理解Python，并熟练地编写Python风格的Python代码。我想还是有一长段路程要走的。下面即是我的一点经验总结，主要是为了整理自己学习的思路。
