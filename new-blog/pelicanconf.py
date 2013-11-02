@@ -34,7 +34,7 @@ LINKS =  (('Pelican', 'http://getpelican.com/'),
 		  ('章炎的主页', 'http://dirlt.com/'),
 		  ('High Scalability', 'http://highscalability.com/'),
 		  ('Hacker Monthly', 'http://hackermonthly.com/'),
-		  ('itkoala', 'http://www.itkoala.com/)(海量运维、运营规划')
+		  ('itkoala', 'http://www.itkoala.com/')
 		  )
 
 # Social widget
