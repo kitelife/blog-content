@@ -73,5 +73,7 @@ GOOGLEPLUS_URL = ''
 GOOGLE_ANALYTICS_ID = 'UA-43488080-1'
 GOOGLE_ANALYTICS_SITENAME = u'黑白'
 
+TENCENT_ANALYTICS_ID = '27164999'
+
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
