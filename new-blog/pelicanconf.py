@@ -70,5 +70,8 @@ DOUBAN_URL = 'http://www.douban.com/people/youngster21/'
 FACEBOOK_URL = ''
 GOOGLEPLUS_URL = ''
 
+GOOGLE_ANALYTICS_ID = 'UA-43488080-1'
+GOOGLE_ANALYTICS_SITENAME = u'黑白'
+
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
