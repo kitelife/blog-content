@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 AUTHOR = u'youngsterxyf'
 SITENAME = u'黑 * 白'
-SITEURL = 'http://youngsterxyf.github.io/newblog'
+SITEURL = 'http://youngsterxyf.github.io'
 
 TIMEZONE = 'Asia/Shanghai'
 
@@ -48,7 +48,7 @@ THEME = 'my-gum'
 DATE_FORMATS = {
 	'zh': '%Y-%m-%d %a'
 }
-RELATIVE_URLS = True
+RELATIVE_URLS = False
 
 DISQUS_SITENAME = "xiayfblackwhite"
 
