@@ -37,7 +37,8 @@ LINKS =  (('Pelican', 'http://getpelican.com/'),
           ('章炎的主页', 'http://dirlt.com/'),
           ('High Scalability', 'http://highscalability.com/'),
           ('Hacker Monthly', 'http://hackermonthly.com/'),
-          ('itkoala', 'http://www.itkoala.com/')
+          ('itkoala', 'http://www.itkoala.com/'),
+          ('Codrops', 'http://tympanus.net/codrops/')
           )
 
 # Social widget
