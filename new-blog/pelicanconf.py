@@ -75,5 +75,9 @@ GOOGLE_ANALYTICS_SITENAME = u'黑白'
 
 TENCENT_ANALYTICS_ID = '27164999'
 
+PLUGIN_PATH = 'plugins'
+PLUGINS = ['latex']
+LATEX = 'article'
+
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
