@@ -16,31 +16,7 @@ CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
 # Blogroll
-LINKS =  (('Pelican', 'http://getpelican.com/'),
-          ('explainshell', 'http://www.explainshell.com/'),
-          ('All Things Distributed', 'http://www.allthingsdistributed.com/'),
-          ('ACM Queue', 'http://queue.acm.org/blog/'),
-          ('a db thinker\'s home', 'http://www.dbthink.com/'),
-          ('BYVoid', 'https://www.byvoid.com/'),
-          ('酷壳', 'http://coolshell.cn/'),
-          ('火丁笔记', 'http://huoding.com/'),
-          ('余果', 'http://yuguo.us/'),
-          ('LaTeX工作室', 'http://www.latexstudio.net/'),
-          ('乱象, 印迹', 'http://www.luanxiang.org/blog/'),
-          ('夏の航海士', 'http://www.soimort.org/'),
-          ('残阳似血', 'http://qinxuye.me/'),
-          ('Right Track Wrong Train', 'http://www.huangz.me/en/latest/index.html'),
-          ('麦子麦', 'http://www.wzxue.com/'),
-          ('Quora', 'http://www.quora.com/'),
-          ('NoOps', 'http://noops.me/'),
-          ('Jia Xiao', 'http://xiao-jia.com/'),
-          ('章炎的主页', 'http://dirlt.com/'),
-          ('High Scalability', 'http://highscalability.com/'),
-          ('Hacker Monthly', 'http://hackermonthly.com/'),
-          ('itkoala', 'http://www.itkoala.com/'),
-          ('Codrops', 'http://tympanus.net/codrops/'),
-          ('深入MySQL内核', 'http://hedengcheng.com/')
-          )
+# LINKS =  ()
 
 # Social widget
 # SOCIAL = (('You can add links in your config file', '#'),
@@ -53,7 +29,7 @@ THEME = 'my-gum'
 DATE_FORMATS = {
 	'zh': '%Y-%m-%d %a'
 }
-RELATIVE_URLS = False
+RELATIVE_URLS = True
 
 DISQUS_SITENAME = "xiayfblackwhite"
 
@@ -66,7 +42,15 @@ DEFAULT_CATEGORY = u'其他'
 PAGE_DIR = 'pages'
 PAGE_URL = 'pages/{slug}.html'
 PAGE_SAVE_AS = 'pages/{slug}.html'
-DISPLAY_PAGES_ON_MENU = True
+DISPLAY_PAGES_ON_MENU = False
+DISPLAY_CATEGORIES_ON_MENU = False
+MENUITEMS = (
+        (u'归档', '/archives.html'),
+        (u'标签', '/tags.html'),
+        (u'工具集', '/pages/tools.html'),
+        (u'链接', '/pages/links.html'),
+        (u'关于我', '/pages/aboutme.html')
+        )
 
 GITHUB_URL = 'http://github.com/youngsterxyf'
 TWITTER_URL = 'https://twitter.com/youngsterxyf'
