@@ -1,6 +1,5 @@
 Title: Golang中如何让html/template不转义html标签
 Date: 2013-11-01
-Category: Golang
 Tags: Golang, template
 Slug: unescape-html-in-golang-html_template
 Author: youngsterxyf
