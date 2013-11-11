@@ -27,4 +27,5 @@ Slug: links
 - [itkoala](http://www.itkoala.com/)
 - [Codrops](http://tympanus.net/codrops/)
 - [深入MySQL内核](http://hedengcheng.com/)
+- [陈海波](http://ipads.se.sjtu.edu.cn/doku.php?id=haibo_chen)
 
