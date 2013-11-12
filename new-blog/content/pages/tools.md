@@ -111,6 +111,8 @@ Slug: tools
 
 ## 命令行工具与解决方案
 
+- [Windows命令行列表](http://technet.microsoft.com/en-us/library/bb490890.aspx)
+
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 
 - Linux上如何删除文本文件中来自Windows的CRLF(^M)的换行符：`dos2unix filename`
