@@ -3,6 +3,17 @@ Date: 2013-11-07
 Author: youngsterxyf
 Slug: links
 
+
+### 学术会议
+
+- SOSP: ACM Symposium on Operating Systems Principles
+- OSDI: USENIX Symposium on Operating Systems Design and Implementation
+- NSDI: Symposium on Networked Systems Design and Implementation
+- FAST: USENIX Conference on File and Storage Technologies
+
+
+### 博客
+
 - [Pelican](http://getpelican.com/)
 - [explainshell](http://www.explainshell.com/)
 - [All Things Distributed](http://www.allthingsdistributed.com/)
