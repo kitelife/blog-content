@@ -327,7 +327,7 @@ Python中，所有东西都是对象。这意味着可以通过名字引用函�
     def argumentative_decorator(gift):
         def func_wrapper(func):
             @wraps(func)
-            def returned_wrapper(*arg, **kwargs):
+            def returned_wrapper(*args, **kwargs):
                  print "I don't like this " + gift + "you gave me!"
                  return func(gift, *args, **kwargs)
             return returned_wrapper
