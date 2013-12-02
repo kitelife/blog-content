@@ -41,4 +41,5 @@ Slug: links
 - [陈海波](http://ipads.se.sjtu.edu.cn/doku.php?id=haibo_chen)
 - [运维进行时](http://www.liuts.com/)
 - [Russ Cox](http://research.swtch.com/)
+- [skoo](http://www.bigendian123.com/)
 
