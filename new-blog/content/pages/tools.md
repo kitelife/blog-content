@@ -271,7 +271,7 @@ Email阅读：Thunderbird/Gmail
 
 日程管理：Trello(Chrome插件+Andriod应用)
 
-思维导图：XMind / www.mindmeister.com / www.wisemapping.com
+思维导图：XMind / Docear / www.mindmeister.com / www.wisemapping.com
 
 原型、系统结构图：Lucidchart
 
