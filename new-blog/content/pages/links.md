@@ -42,4 +42,5 @@ Slug: links
 - [运维进行时](http://www.liuts.com/)
 - [Russ Cox](http://research.swtch.com/)
 - [skoo](http://www.bigendian123.com/)
+- [LinkedIn Blog](http://engineering.linkedin.com/blog)
 
