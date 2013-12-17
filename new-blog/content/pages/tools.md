@@ -103,7 +103,7 @@ Slug: tools
 - Racket（Scheme）
 - Wappalyzer（Chrome、Firefox插件，用于检测网站所使用的技术，非常赞）
 - TeXstudio（Latex）（算开发工具么？）
-- Git/SVN（源码控制）
+- Git/SVN（源码控制），SourceTree（free Git & Mercurial client for Windows or Mac）
 - jshint（JavaScript代码检查命令行工具）
 - virtualenv（Python虚拟环境）
 - IPython（可在virtualenv虚拟环境中通过pip install ipython安装使用）
@@ -278,3 +278,7 @@ Email阅读：Thunderbird/Gmail
 数据备份同步：Dropbox(+Andriod应用)(注：[linux下安装使用Dropbox](https://www.dropbox.com/install#linux-install-content))
 
 文档记录与在线编辑：Evernote(+chrome插件Web Clipper+Andriod应用)/Google Drive/Readability(仅可记录阅读，Chrome插件+Andriod应用)
+
+mRemote（支持多种协议-RDP、SSH、VNC、Telnet、HTTP/HTTPS等，但我用来访问Windows服务器远程桌面）
+
+Xshell（远程访问Linux服务器）
