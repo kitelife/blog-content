@@ -25,7 +25,7 @@ IE中JavaScript的Date对象有如下[三种构造函数](http://msdn.microsoft.
 
 **更新**：
 
-*注：感谢@yiyun指出，IE中的Date构造函数只是不支持"2013-12-03"这种时间字符串*。[文档](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)也有说明，是我阅读不仔细：
+*注：感谢@yiyun指出，IE中的Date构造函数只是不支持"xxxx-xx-xx"这种格式的时间字符串*。[文档](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)也有说明，是我阅读不仔细：
 
     :::text
     dateVal
