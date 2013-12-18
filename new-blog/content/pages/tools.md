@@ -117,6 +117,8 @@ Slug: tools
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 
+- 图片缩放、格式转换等：`convert`
+
 - Linux上如何删除文本文件中来自Windows的CRLF(^M)的换行符：`dos2unix filename`
 
 - Windows命令行下查看本地路由表： `route print`
