@@ -36,8 +36,6 @@ IE中JavaScript的Date对象有如下[三种构造函数](http://msdn.microsoft.
 
 ------
 
-------
-
 在我的案例中，是需要将时间字符串“xxxx-xx-xx”（如“2013-12-03”）转换成一个Date对象，为了兼容IE，我如下实现：
 
     :::js
