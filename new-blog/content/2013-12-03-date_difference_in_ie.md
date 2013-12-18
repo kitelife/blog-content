@@ -7,27 +7,12 @@ Slug: date_difference_in_ie
 之前在[仓库作业机器监控系统](http://youngsterxyf.github.io/2013/11/29/inner_warehouse_monitor_system/)项目中使用[HighCharts的时间序列数据图](http://www.highcharts.com/demo/line-time-series)来绘制机器CPU使用率、内存使用量、网络流量趋势变化图等，这些图在IE下却没有正常显示，IE也没有报错，按理说HighCharts的IE兼容性是较好的，不会出现这种问题，
 最后查明原因---确实不是HighCharts的问题，而是由于IE下JavaScript的Date对象缺少一种构造函数导致的。
 
-IE中JavaScript的Date对象不支持**时间字符串**作为参数的构造函数，仅有如下[三种构造函数](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)：
+IE中JavaScript的Date对象有如下[三种构造函数](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)：
 
     :::text
     dateObj = new Date()
     dateObj = new Date(dateVal)
     dateObj = new Date(year, month, date[, hours[, minutes[, seconds[,ms]]]]) 
-
-------
-
-**更新**：
-
-*注：感谢@yiyun指出，IE中的Date构造方法只是不支持"2013-12-03"这种时间字符串*。[文档](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)也有说明，是我阅读不仔细：
-
-    :::text
-    dateVal
-        必需。 如果是数值，dateVal 表示指定日期与 1970 年 1 月 1 日午夜之间相差的协调世界时的毫秒数。   
-        如果是字符串，则根据日期和时间字符串 (JavaScript) 中的规则分析 dateVal。 dateVal 参数也可以是从一些 ActiveX 对象返回的 VT_DATE 值。
-
-其中日期和时间字符串的规则见：[http://msdn.microsoft.com/zh-cn/library/ie/ff743760.aspx](http://msdn.microsoft.com/zh-cn/library/ie/ff743760.aspx)。
-
-------
 
 其他浏览器中除了这三种之外，[还有一种](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date):
 
@@ -35,6 +20,21 @@ IE中JavaScript的Date对象不支持**时间字符串**作为参数的构造函
     dateObj = new Date(dateString);
 
 如果在IE下使用了这种构造函数，IE不会提示错误，但在调用dateObj的getMonth、getDate等等方法时返回的是**NaN**，从而导致了其他问题。
+
+------
+
+**更新**：
+
+*注：感谢@yiyun指出，IE中的Date构造函数只是不支持"2013-12-03"这种时间字符串*。[文档](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)也有说明，是我阅读不仔细：
+
+    :::text
+    dateVal
+        必需。如果是数值，dateVal表示指定日期与1970年1月1日午夜之间相差的协调世界时的毫秒数。   
+        如果是字符串，则根据日期和时间字符串(JavaScript)中的规则分析dateVal。dateVal参数也可以是从一些ActiveX对象返回的 VT_DATE值。
+
+其中日期和时间字符串的规则见：[http://msdn.microsoft.com/zh-cn/library/ie/ff743760.aspx](http://msdn.microsoft.com/zh-cn/library/ie/ff743760.aspx)。
+
+------
 
 ------
 
