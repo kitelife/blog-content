@@ -11,7 +11,7 @@ TIMEZONE = 'Asia/Shanghai'
 DEFAULT_LANG = u'zh'
 
 # Feed generation is usually not desired when developing
-FEED_ALL_ATOM = None
+FEED_ALL_ATOM = 'feeds/all.xml'
 CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
