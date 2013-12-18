@@ -14,6 +14,15 @@ IE中JavaScript的Date对象不支持**时间字符串**作为参数的构造函
     dateObj = new Date(dateVal)
     dateObj = new Date(year, month, date[, hours[, minutes[, seconds[,ms]]]]) 
 
+*注：感谢@yiyun指出，IE中的Date构造方法只是不支持"2013-12-03"这种时间字符串*。[文档](http://msdn.microsoft.com/zh-cn/library/ie/cd9w2te4.aspx)也有说明，是我阅读不仔细：
+
+    :::text
+    dateVal
+        必需。 如果是数值，dateVal 表示指定日期与 1970 年 1 月 1 日午夜之间相差的协调世界时的毫秒数。   
+        如果是字符串，则根据日期和时间字符串 (JavaScript) 中的规则分析 dateVal。 dateVal 参数也可以是从一些 ActiveX 对象返回的 VT_DATE 值。
+
+其中日期和时间字符串的规则见：[http://msdn.microsoft.com/zh-cn/library/ie/ff743760(v=vs.94).aspx](http://msdn.microsoft.com/zh-cn/library/ie/ff743760(v=vs.94).aspx)。
+
 其他浏览器中除了这三种之外，[还有一种](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date):
 
     :::js
