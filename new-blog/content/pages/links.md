@@ -45,3 +45,5 @@ Slug: links
 - [LinkedIn Blog](http://engineering.linkedin.com/blog)
 - [Tim-后端技术](http://timyang.net/)
 - [淘叔度](http://zhuzhaoyuan.com/)
+- [mikespook](http://mikespook.com/)
+- [dcshi@唐品](http://www.dcshi.com/)
