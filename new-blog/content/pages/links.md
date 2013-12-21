@@ -43,4 +43,5 @@ Slug: links
 - [Russ Cox](http://research.swtch.com/)
 - [skoo](http://www.bigendian123.com/)
 - [LinkedIn Blog](http://engineering.linkedin.com/blog)
-
+- [Tim-后端技术](http://timyang.net/)
+- [淘叔度](http://zhuzhaoyuan.com/)
