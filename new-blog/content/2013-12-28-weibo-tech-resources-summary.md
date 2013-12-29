@@ -28,7 +28,8 @@ Slug: weibo_tech_resources_summary
 - [rsync(Go语言实现)](https://bitbucket.org/kardianos/rsync) <- [@ASTA谢](http://weibo.com/533452688)
 - [plan9](http://plan9.bell-labs.com/plan9/) <- [@CodeBox-腾讯](http://weibo.com/codebox) *推荐语：推荐有技术品味的同学都看看plan9的源码，真正世界级大师的作品。plan9的部分代码后来直接用来实现go语言了。* (前年关注过这个项目，哈哈，我的Github头像就是用的plan9的图标)
 - [maximum-awesome](https://github.com/square/maximum-awesome) <- [@developerWorks](http://weibo.com/developerworks)
-- [InFluxDB](http://influxdb.org/) <- [@有点儿欢乐](http://weibo.com/soddyque) (在看到这个推荐之前，我已经准备尝试使用influxdb，现在已用其存储CPU、内存使用率等时间序列数据，哈哈)
+- [InFluxDB](http://influxdb.org/) <- [@有点儿欢乐](http://weibo.com/soddyque)(目前，我们使用InfluxDB来实现一种时间序列数据后备存储方案。官方的文档还不太完善，也还没生产应用案例)
+- [NSQ](http://bitly.github.io/nsq/) <- [@夏永锋_SJTU](http://weibo.com/u/1855563263) (哈哈，我自己。目前我们使用NSQ来接收服务器上报的各项性能数据)
 
 ### 文章
 
