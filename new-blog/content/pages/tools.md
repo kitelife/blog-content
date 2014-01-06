@@ -57,6 +57,8 @@ Slug: tools
 
 [Learn Vimscript the Hard Way](http://learnvimscriptthehardway.stevelosh.com/)
 
+[Practical Vim: Edit Text at the Speed of Thought](https://github.com/richardlee8681/Rich/blob/master/blog/Linux/Practical%20Vim%20Edit%20Text%20at%20the%20Speed%20of%20Thought.pdf)
+
 [VIM标签页（tab）](http://www.pythonclub.org/linux/vim/tabs)
 
 [Vim的分屏功能](http://coolshell.cn/articles/1679.html)
