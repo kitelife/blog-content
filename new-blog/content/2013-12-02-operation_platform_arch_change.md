@@ -17,5 +17,3 @@ Slug: operation_platform_arch_change
 ![operation_platform_new_arch](/assets/uploads/pics/operation_platform_new_arch.png)
 
 这种方案的时间成本较低，无需改动对外API，也无需大量修改代码。
-
-最后敲定的方案思路上与我的方案一致，但很多人不愿使用主从MySQL、主从Redis，觉得维护起来麻烦，决定使用公司的云DB来替代MySQL，Redis还是照原来那样没有规划地使用着，虽然我不太喜欢这种存储方案，但也没多说什么。
