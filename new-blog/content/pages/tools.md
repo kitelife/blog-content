@@ -105,7 +105,7 @@ Slug: tools
 - Racket（Scheme）
 - Wappalyzer（Chrome、Firefox插件，用于检测网站所使用的技术，非常赞）
 - TeXstudio（Latex）（算开发工具么？）
-- Git/SVN（源码控制），SourceTree（free Git & Mercurial client for Windows or Mac）
+- Git/SVN（源码控制），SourceTree（free Git & Mercurial client for Windows or Mac），[ungit](https://github.com/FredrikNoren/ungit)
 - jshint（JavaScript代码检查命令行工具）
 - virtualenv（Python虚拟环境）
 - IPython（可在virtualenv虚拟环境中通过pip install ipython安装使用）
