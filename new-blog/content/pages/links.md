@@ -47,3 +47,4 @@ Slug: links
 - [淘叔度](http://zhuzhaoyuan.com/)
 - [mikespook](http://mikespook.com/)
 - [dcshi@唐品](http://www.dcshi.com/)
+- [facebook Engineering Blog](https://code.facebook.com/posts/)
