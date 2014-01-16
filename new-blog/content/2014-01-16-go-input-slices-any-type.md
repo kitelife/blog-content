@@ -4,6 +4,10 @@ Author: youngsterxyf
 Slug: go-input-slices-any-type
 Tags: Golang, 翻译
 
+原文：[Go – taking slices of any type as input parameters](https://ahmetalpbalkan.com/blog/golang-take-slices-of-any-type-as-input-parameter/)
+
+译者：[youngsterxyf](https://github.com/youngsterxyf)
+
 最近参与的一个业务项目，[go-linq](https://github.com/ahmetalpbalkan/go-linq)，让我了解到Go语言的类型系统并不是为任何类面向
 对象编程而设计的。没有泛型，没有类型继承，也没有提供任何对这些特性有用的东西。
 
