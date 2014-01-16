@@ -70,4 +70,4 @@ Tags: Golang, 翻译
 函数`takeArg()`尝试将传入的参数值转换为指定的[reflect.Kind](http://golang.org/pkg/reflect/#Kind)类型，然后函数`takeSliceArg()`
 尝试将传递给它的值（经`takeArg()`转换后）转换为一个`interface{}`的slice。虽然，这样会因为反射而影响到一点性能，但影响并不大。
 
-就是这样了。这种方案启发于Tobia Confronto的[fn项目](https://github.com/tobia/fn)，并[应用到了go-linq](https://github.com/ahmetalpbalkan/go-linq/commit/fa1548dc4ad8126e62c1848df6e6d961753d976e#diff-3)。
+就是这样了。这种方案启发于Tobia Confronto的[fn项目](https://github.com/tobia/fn)，并[应用到go-linq中](https://github.com/ahmetalpbalkan/go-linq/commit/fa1548dc4ad8126e62c1848df6e6d961753d976e#diff-3)。
