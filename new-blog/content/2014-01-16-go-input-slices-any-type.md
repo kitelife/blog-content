@@ -8,7 +8,7 @@ Tags: Golang, 翻译
 
 译者：[youngsterxyf](https://github.com/youngsterxyf)
 
-最近参与的一个业务项目，[go-linq](https://github.com/ahmetalpbalkan/go-linq)，让我了解到Go语言的类型系统并不是为任何类面向
+最近参与的一个业余项目，[go-linq](https://github.com/ahmetalpbalkan/go-linq)，让我了解到Go语言的类型系统并不是为任何类面向
 对象编程而设计的。没有泛型，没有类型继承，也没有提供任何对这些特性有用的东西。
 
 但是，提供了一个名为`interface{}`的类型，你可以向其赋予几乎任意类型的值，不会抛出编译错误，就像.NET的`Object`或Java的`Object`：
