@@ -1,4 +1,4 @@
-Title: Go - 以任意类型的slices作为输入参数
+Title: Go - 以任意类型的slices作为输入参数（译）
 Date: 2014-01-16
 Author: youngsterxyf
 Slug: go-input-slices-any-type
