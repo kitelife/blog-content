@@ -1,4 +1,4 @@
-Title: 基于Golang的Http处理接口实现请求处理中间件（译）
+Title: 如何实现Golang的http请求处理中间件（译）
 Date: 2014-01-17
 Author: youngsterxyf
 Slug: golang-http-handlers-as-middleware
