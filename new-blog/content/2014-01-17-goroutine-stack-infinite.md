@@ -1,4 +1,4 @@
-Title: 为何Goroutine的栈空间可以无限大？
+Title: 为何Goroutine的栈空间可以无限大？（译）
 Date: 2014-01-17
 Author: youngsterxyf
 Slug: goroutine-stack-infinite
