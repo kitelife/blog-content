@@ -3,13 +3,14 @@ Date: 2014-01-17
 Author: youngsterxyf
 Slug: goroutine-stack-infinite
 Tags: Golang, 翻译
+Latex:
 
 原文：[Why is a Goroutine's stack infinite?](http://dave.cheney.net/2013/06/02/why-is-a-goroutines-stack-infinite)
 
 译者：[youngsterxyf](https://github.com/youngsterxyf)
 
 
-Go编程新手可能会偶然发现[Go语言](http://golang.org/)-与一个Goroutine可用栈空间大小相关-古怪的特性。这通常是由于程序员
+Go编程新手可能会偶然发现[Go语言](http://golang.org/)---与一个Goroutine可用栈空间大小相关---的一个古怪特性。这通常是由于程序员
 无意间构造了一个无限递归函数调用而产生的。为了阐明这个特性，以如下代码（有点刻意设计的）为例。
 
     :::go
@@ -41,8 +42,8 @@ Go编程新手可能会偶然发现[Go语言](http://golang.org/)-与一个Gorou
 Goroutine的主要特征之一是其开销---在内存占用初始化方面，创建一个Goroutine的开销非常小（相比于一个传统POSIX线程的1-8M字节），并且
 Goroutine的栈空间是按需扩大和缩小的。这就允许一个Goroutine以单个4096字节的栈空间开始，然后按需扩容缩容，也不用担心栈空间耗尽的风险。
 
-为了实现这一特性，链接器（5l，6l，8l）在每个函数的开头都插入一小段前导代码<sup>1</sup>，这段代码会检测该函数需要的栈空间大小是否小于当前可用的栈空间。
-若大于，则调用`runtime.morestack`分配一个新的栈页（stack page）<sup>2</sup>，拷贝函数调用方传递来的参数，然后将控制权返回给原来要调用的函数，
+为了实现这一特性，链接器（5l，6l，8l）在每个函数的开头都插入一小段前导代码$ ^1 $，这段代码会检测该函数需要的栈空间大小是否小于当前可用的栈空间。
+若大于，则调用`runtime.morestack`分配一个新的栈页（stack page）$ ^2 $，拷贝函数调用方传递来的参数，然后将控制权返回给原来要调用的函数，
 这样这个函数就可以安全运行了。当这个函数退出时，再撤销操作，将函数返回值拷贝回函数调用方的栈帧（stack frame），不再需要的栈空间也被释放。
 
 通过这个过程，栈空间就好像无限大一样，若假设不会持续地跨越两个栈的大小边界-通常称为*栈切分（stack splitting）*（译注：不太理解这句话，应该是指：**程序执行
@@ -56,7 +57,7 @@ Goroutine的栈空间是按需扩大和缩小的。这就允许一个Goroutine�
 
 Go程序可用的堆大小依赖于很多东西，包括机器的CPU架构和操作系统，但这通常是一个超出机器物理内存的值，因此机器很可能在程序耗尽它的堆空间之前就会频繁地swap。
 
-对于Go 1.1，曾有强烈要求增大32位、64位平台上堆的最大值，但这在某种程度上恶化了这一问题，比如，你的机器不太可能有128GB<sup>3</sup>的物理内存。
+对于Go 1.1，曾有强烈要求增大32位、64位平台上堆的最大值，但这在某种程度上恶化了这一问题，比如，你的机器不太可能有128GB$ ^3 $的物理内存。
 
 最后提一下，关于这个问题有几个未解决的issue（[链接](https://code.google.com/p/go/issues/detail?id=4692)，[链接](https://code.google.com/p/go/issues/detail?id=2556)）,
 目前还没找到一个解决方案能够不影响按常规编写的程序的性能。
