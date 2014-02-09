@@ -97,7 +97,7 @@ Slug: tools
 
 ## 开发工具
 
-- VIM / Sublime Text
+- VIM / Sublime Text / StackEdit(Markdown文本编辑)
 - InteliJ IDEA（Golang）
 - JetBrains PyCharm（Python）
 - JetBrains PhpStorm <s>Zend Studio</s>（PHP）
