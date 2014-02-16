@@ -49,3 +49,4 @@ Slug: links
 - [dcshi@唐品](http://www.dcshi.com/)
 - [facebook Engineering Blog](https://code.facebook.com/posts/)
 - [DevCharm](https://devcharm.com/)
+- [豆瓣blog](http://blog.douban.com/)
