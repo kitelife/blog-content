@@ -50,3 +50,4 @@ Slug: links
 - [facebook Engineering Blog](https://code.facebook.com/posts/)
 - [DevCharm](https://devcharm.com/)
 - [豆瓣blog](http://blog.douban.com/)
+- [阿里中间件团队博客](http://jm-blog.aliapp.com/)
