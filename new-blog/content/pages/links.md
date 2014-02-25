@@ -53,3 +53,4 @@ Slug: links
 - [阿里中间件团队博客](http://jm-blog.aliapp.com/)
 - [百度搜索研发部博客](http://stblog.baidu-tech.com/)
 - [SaltTiger](http://www.salttiger.com/)
+- [闲思录](http://dbanotes.net/)
