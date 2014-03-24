@@ -55,3 +55,4 @@ Slug: links
 - [SaltTiger](http://www.salttiger.com/)
 - [闲思录](http://dbanotes.net/)
 - [mysqlops](http://www.zhdba.com/mysqlops/)
+- [海宇之涧(包云岗)](http://blog.sciencenet.cn/u/iKnow)
