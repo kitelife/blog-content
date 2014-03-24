@@ -54,3 +54,4 @@ Slug: links
 - [百度搜索研发部博客](http://stblog.baidu-tech.com/)
 - [SaltTiger](http://www.salttiger.com/)
 - [闲思录](http://dbanotes.net/)
+- [mysqlops](http://www.zhdba.com/mysqlops/)
