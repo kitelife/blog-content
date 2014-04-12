@@ -57,3 +57,4 @@ Slug: links
 - [mysqlops](http://www.zhdba.com/mysqlops/)
 - [海宇之涧(包云岗)](http://blog.sciencenet.cn/u/iKnow)
 - [岁月如歌](https://github.com/lifesinger/lifesinger.github.com/issues?labels=blog&state=open)
+- [The Digital Cat](http://lgiordani.github.io/index.html)
