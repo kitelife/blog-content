@@ -49,7 +49,8 @@ MENUITEMS = (
         (u'标签', '/tags.html'),
         (u'工具集', '/pages/tools.html'),
         (u'链接', '/pages/links.html'),
-        (u'关于我', '/pages/aboutme.html')
+        (u'关于我', '/pages/aboutme.html'),
+        (u'RSS', '/feeds/all.xml')
         )
 
 GITHUB_URL = 'http://github.com/youngsterxyf'
