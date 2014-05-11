@@ -7,3 +7,6 @@ Slug: aboutme
 
 <div class="github-card" data-user="youngsterxyf"></div>
 <script src="../assets/github-cards/widget.js"></script>
+
+
+[![endorse](https://api.coderwall.com/youngsterxyf/endorsecount.png)](https://coderwall.com/youngsterxyf)
