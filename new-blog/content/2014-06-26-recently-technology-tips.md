@@ -4,7 +4,7 @@ Author: youngsterxyf
 Slug: recently-technology-tips
 Tags: 笔记
 
-- 如何方便地删除某目录下所有空文件？
+- **如何方便地删除某目录下所有空文件？**
 
 `find . -size 0 -exec rm {} \;` 或 `find . -size 0 | xargs rm -f`
 
@@ -12,7 +12,7 @@ find默认会递归遍历所有子目录，如果想只在当前目录查找，�
 
 ------
 
-- 如何查看某进程打开了哪些文件？
+- **如何查看某进程打开了哪些文件？**
 
 先通过`ps aux | grep [进程名]`找到该进程的进程好，然后`ls -la /proc/[进程号]/fd`，输出不仅包含打开的普通文件。
 
@@ -20,14 +20,15 @@ find默认会递归遍历所有子目录，如果想只在当前目录查找，�
 
 ------
 
-- 如何重启php-fpm？
+- **如何重启php-fpm？**
 
 php5.3.3以上版本的php-fpm不再支持php-fpm以前具有的`php-fpm (start|stop|reload)`等命令，需要使用信号控制：
 master进程可以理解以下信号：
-  - INT, TERM 立刻终止
-  - QUIT 平滑终止
-  - USR1 重新打开日志文件
-  - USR2 平滑重载所有worker进程并重新载入配置和二进制模块
+
+1. INT, TERM 立刻终止
+2. QUIT 平滑终止
+3. USR1 重新打开日志文件
+4. USR2 平滑重载所有worker进程并重新载入配置和二进制模块
 
 那么应该这样重启php-fpm：
 
@@ -35,7 +36,7 @@ master进程可以理解以下信号：
 
 ------
 
-- 对于Nginx、php-fpm等的日志文件使用shell脚本进行切分备份时，发现Nginx、php-fpm还是往备份的老文件中，而不是往新的access.log或error.log文件中写日志，如何解决？
+- **对于Nginx、php-fpm等的日志文件使用shell脚本进行切分备份时，发现Nginx、php-fpm还是往备份的老文件中，而不是往新的access.log或error.log文件中写日志，如何解决？**
 
 shell脚本中通常使用mv + touch 或 cp + touch的方式对日志文件进行备份。由于Nginx或php-fpm进程其实只知道日志文件打开后的文件描述符，而不知道打开是哪个文件。使用mv或cp备份文件后，应该是修改了内核中文件描述符对应的文件路径（我猜的！），但Nginx或php-fpm并不知道现在该文件描述符指向的不再是原来的日志文件。所以解决方法就是通知Nginx或php-fpm根据配置重新打开日志文件就可以了！根据前一个问题，可知可以通过kill命令给进程发送USR1信号来实现。
 
@@ -45,7 +46,7 @@ shell脚本中通常使用mv + touch 或 cp + touch的方式对日志文件进�
 
 ------
 
-- 工作中使用git的分支模式进行协作开发，需要在测试服务器（HTTP Server使用Nginx，应用程序基于PHP的Yii框架实现）上为每个分支开一个测试环境，为标识使用方便，希望使用HTTP同一个端口，不同的URL前缀标识不同的分支，如master分支的URL为/master/，其他分支的URL为/test/[分支名]/。该如何配置Nginx的虚拟主机？
+- **工作中使用git的分支模式进行协作开发，需要在测试服务器（HTTP Server使用Nginx，应用程序基于PHP的Yii框架实现）上为每个分支开一个测试环境，为标识使用方便，希望使用HTTP同一个端口，不同的URL前缀标识不同的分支，如master分支的URL为/master/，其他分支的URL为/test/[分支名]/。该如何配置Nginx的虚拟主机？**
 
 我们的应用使用Yii框架默认的URL风格(/?r=controller/action)，意味着所有非静态内容(非js、css、图片等)请求指向的服务器资源都是相同的（如`/`或`/xxx/`），而Yii框架的请求处理入口统一为一个index.php文件。Nginx有一个配置变量`$uri`，保存着请求的URL（不带请求参数）。那么可以让所有分支的测试环境共用一个root，再将所有非静态内容请求重定向到`$uri/index.php`就可以了。对于静态文件请求让其根据路径直接获取文件内容即可。但还有一个问题，怎么让分支代码中所有静态文件请求都带上分支对应的URL前缀？这个可以未Yii配置一个名为url_prefix的参数，指定该分支的所使用的URL前缀，然后在HTML模板（我们使用smarty来渲染）中让所有静态文件超链接都带上这个URL前缀。
 
