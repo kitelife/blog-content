@@ -120,7 +120,7 @@ Slug: tools
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 
-- Git签出某个tag的代码：`git checkout -b branch_name tag_name`
+- Git签出某个tag的代码：`git checkout -b branch_name tag_name` 或 `git checkout tag_name` 或 `git checkout tag/tag_name`
 
 - Ubuntu为Firefox安装Adobe Flash插件： `sudo apt-get install flashplugin-installer`
 
