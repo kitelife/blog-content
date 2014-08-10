@@ -120,6 +120,10 @@ Slug: tools
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 
+- 当git不支持https协议时，可以通过禁用SSL认证来继续使用：`git config --global http.sslVerify false`
+
+- Git签出某个tag的代码：`git checkout -b branch_name tag_name` 或 `git checkout tag_name` 或 `git checkout tag/tag_name`
+
 - Ubuntu为Firefox安装Adobe Flash插件： `sudo apt-get install flashplugin-installer`
 
 - 从某网卡上删除绑定的ip：`ip addr del 192.168.2.201/32 dev eth0`

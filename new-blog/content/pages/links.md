@@ -58,3 +58,5 @@ Slug: links
 - [岁月如歌](https://github.com/lifesinger/lifesinger.github.com/issues?labels=blog&state=open)
 - [The Digital Cat](http://lgiordani.github.io/index.html)
 - [勾三股四-囧克斯](http://jiongks.name/)
+- [Paper Trail](http://the-paper-trail.org/blog/)
+- [银河里的星星](http://duanple.blog.163.com/)
