@@ -60,3 +60,4 @@ Slug: links
 - [勾三股四-囧克斯](http://jiongks.name/)
 - [Paper Trail](http://the-paper-trail.org/blog/)
 - [银河里的星星](http://duanple.blog.163.com/)
+- [siddontang](http://siddontang.com/)
