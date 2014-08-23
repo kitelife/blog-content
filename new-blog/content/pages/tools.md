@@ -89,6 +89,7 @@ Slug: tools
 - [Beamer演示学习笔记](http://zoho.is-programmer.com/user_files/zoho/File/beamerlog-1112.pdf)
 - [A Beamer Quickstart](http://www.math.umbc.edu/~rouben/beamer/)
 - [moderncv的笔记](http://www.xiangsun.org/tex/notes-on-moderncv)
+- [The LaTeX Font Catalogue](http://www.tug.dk/FontCatalogue/)
 
 ### 绘图语言与绘图工具
 
