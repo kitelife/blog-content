@@ -62,3 +62,4 @@ Slug: links
 - [银河里的星星](http://duanple.blog.163.com/)
 - [siddontang](http://siddontang.com/)
 - [Tengine](http://tengine.taobao.org/index_cn.html)
+- [Google Open Source Blog](http://google-opensource.blogspot.com/)
