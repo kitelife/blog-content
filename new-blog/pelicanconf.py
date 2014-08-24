@@ -11,7 +11,8 @@ TIMEZONE = 'Asia/Shanghai'
 DEFAULT_LANG = u'zh'
 
 # Feed generation is usually not desired when developing
-FEED_ALL_ATOM = 'feeds/all.xml'
+FEED_ALL_ATOM = 'feeds/atom.xml'
+FEED_ALL_RSS = 'feeds/rss.xml'
 CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 
@@ -50,7 +51,7 @@ MENUITEMS = (
         (u'工具集', '/pages/tools.html'),
         (u'链接', '/pages/links.html'),
         (u'关于我', '/pages/aboutme.html'),
-        (u'RSS', '/feeds/all.xml')
+        (u'RSS', '/feeds/rss.xml')
         )
 
 GITHUB_URL = 'http://github.com/youngsterxyf'
