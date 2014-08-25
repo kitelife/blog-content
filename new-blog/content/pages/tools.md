@@ -80,6 +80,7 @@ Slug: tools
 - [LaTeX编辑部](http://zzg34b.w3.c361.com/index.htm)
 - [浙江大学理学院数学系-TeX和LaTex论坛](http://www.math.zju.edu.cn/ligangliu/latexforum/)
 - [Tex-StackExchange](http://tex.stackexchange.com/)
+- [LaTeX - WikiBooks](http://en.wikibooks.org/wiki/LaTeX)
 
 ### Beamer
 
