@@ -14,6 +14,7 @@ Slug: links
 
 ### 博客
 
+- [众成技术聚乐部](http://happytechgroup.github.io/)
 - [Pelican](http://getpelican.com/)
 - [explainshell](http://www.explainshell.com/)
 - [All Things Distributed](http://www.allthingsdistributed.com/)
@@ -60,3 +61,6 @@ Slug: links
 - [勾三股四-囧克斯](http://jiongks.name/)
 - [Paper Trail](http://the-paper-trail.org/blog/)
 - [银河里的星星](http://duanple.blog.163.com/)
+- [siddontang](http://siddontang.com/)
+- [Tengine](http://tengine.taobao.org/index_cn.html)
+- [Google Open Source Blog](http://google-opensource.blogspot.com/)

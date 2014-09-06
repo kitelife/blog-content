@@ -80,6 +80,7 @@ Slug: tools
 - [LaTeX编辑部](http://zzg34b.w3.c361.com/index.htm)
 - [浙江大学理学院数学系-TeX和LaTex论坛](http://www.math.zju.edu.cn/ligangliu/latexforum/)
 - [Tex-StackExchange](http://tex.stackexchange.com/)
+- [LaTeX - WikiBooks](http://en.wikibooks.org/wiki/LaTeX)
 
 ### Beamer
 
@@ -89,6 +90,7 @@ Slug: tools
 - [Beamer演示学习笔记](http://zoho.is-programmer.com/user_files/zoho/File/beamerlog-1112.pdf)
 - [A Beamer Quickstart](http://www.math.umbc.edu/~rouben/beamer/)
 - [moderncv的笔记](http://www.xiangsun.org/tex/notes-on-moderncv)
+- [The LaTeX Font Catalogue](http://www.tug.dk/FontCatalogue/)
 
 ### 绘图语言与绘图工具
 
@@ -119,6 +121,8 @@ Slug: tools
 - [Windows命令行列表](http://technet.microsoft.com/en-us/library/bb490890.aspx)
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
+
+- 使用HTTP/HTTPS协议push大文件时失败，提示RPC failed; result=22, HTTP code = 411，可能是因为Git默认post数据buffer比较小，需要自己设置下：`git config http.postBuffer 524288000 #Set to 500MB`
 
 - 当git不支持https协议时，可以通过禁用SSL认证来继续使用：`git config --global http.sslVerify false`
 
