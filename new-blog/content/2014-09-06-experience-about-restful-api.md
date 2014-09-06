@@ -133,18 +133,18 @@ xxx为控制器名称，yyy为动作方法名称，这里可以看出HTTP API UR
 
             ...
 
-        public static $status_code = array(
-            self::OK => '成功',
-            self::CREATED => '创建成功',
-            self::TOKEN_WRONG => 'token已过期或不存在',
-            self::LACK_PARAM => '缺少必要的请求参数',
-            self::SYSTEM_ERROR => '系统异常',
-            self::WRONG_PARAM => '请求参数不正确',
-            self::DUPLICATE_RESOURCE => '已经存在相同的资源',
-            self::NOT_FOUND => '资源不存在',
-            ...
-        );
-    }
+            public static $status_code = array(
+                self::OK => '成功',
+                self::CREATED => '创建成功',
+                self::TOKEN_WRONG => 'token已过期或不存在',
+                self::LACK_PARAM => '缺少必要的请求参数',
+                self::SYSTEM_ERROR => '系统异常',
+                self::WRONG_PARAM => '请求参数不正确',
+                self::DUPLICATE_RESOURCE => '已经存在相同的资源',
+                self::NOT_FOUND => '资源不存在',
+                ...
+            );
+        }
 
 API中仅需使用CodeStatus类定义的常量成员即可（如CodeStatus::OK）。
 
