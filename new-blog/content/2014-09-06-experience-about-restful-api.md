@@ -147,3 +147,9 @@ xxx为控制器名称，yyy为动作方法名称，这里可以看出HTTP API UR
     }
 
 API中仅需使用CodeStatus类定义的常量成员即可（如CodeStatus::OK）。
+
+
+### 推荐阅读
+
+- [Github API v3](https://developer.github.com/v3/)
+- [Heroku HTTP API Design Guide](https://github.com/interagent/http-api-design)
