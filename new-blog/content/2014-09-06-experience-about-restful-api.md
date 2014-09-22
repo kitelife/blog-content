@@ -10,14 +10,14 @@ Tags: 笔记, RESTful
 2. 就初稿与相关同事进行讨论，确定一些细节问题，逐步完善；
 3. 根据设计稿，基于Yii框架，配置路由，实现用户身份认证模块；
 4. 基于步骤3，逐个实现业务相关API；
-5. 对部分代码进行重构，减少不必要的代码重复。主要使用Yii控制器的before_action方法来实现多层过滤器。
+5. 对部分代码进行重构，减少不必要的代码重复。主要使用Yii控制器的beforeAction方法来实现多层过滤器。
 
 ### 设计
 
 考虑到RESTful API简洁明了的接口表现形式，一开始我们就一致确定使用RESTful风格的API。参考以前自己使用多个开放平台API的经验，
 及[Github的开放API文档](https://developer.github.com/v3/)，大致完成设计初稿。
 
-#### 资源
+##### 资源
 
 RESTful API主要有两个核心：
 
@@ -51,7 +51,7 @@ RESTful风格API的设计，最难之处，我认为就是“资源”。
 
 拆分之后，可能需要多次调用API才能获取到需要的数据，但每个API的定义都简单而明确。
 
-对于``GET /province/{province_name_or_id/county/{county_id_or_name/weather/}}``这个URL，可能有人觉得它过长了，可以缩短设计为：
+对于``GET /province/{province_name_or_id}/county/{county_id_or_name}/weather/``这个URL，可能有人觉得它过长了，可以缩短设计为：
 
     :::text
     GET /county/{county_id_or_name}/weather/
@@ -66,7 +66,7 @@ RESTful风格API的设计，最难之处，我认为就是“资源”。
 
 所以RESTful API设计时有许多细节之处需要权衡。
 
-#### 响应码
+##### 响应码
 
 RESTful API请求的响应码通常有两种表现形式，一种是直接使用HTTP协议的HTTP code，另一种是HTTP协议的响应码始终为200，但在响应体中加入类似名为code的字段，
 来表达当前API请求的响应状态，这个code字段值的含义就是HTTP code含义，除了code字段外可能还会附加一个类似名为message的字段来进一步解释响应状态。
@@ -74,7 +74,7 @@ RESTful API请求的响应码通常有两种表现形式，一种是直接使用
 我倾向使用第二种形式，理由是：HTTP协议的HTTP code，在为404、500等错误码时，表现的应该是API服务器端程序的健壮性等问题，是未预期的错误，而响应体中的code字段，
 在返回404或500等错误码时，表达是API服务器端已预期到这些可能存在的错误，是主动返回这样的错误码的。这样API的调用者也能更容易判断某些问题的原因；
 
-#### 请求的唯一标识
+##### 请求的唯一标识
 
 为了方便快速定位用户反馈的问题，我们在每个API的响应内容中加入一个request_id字段作为API请求的唯一性标识，这个请求处理过程中产生的所有日志都是和这个
 request_id关联的，这样可以根据request_id聚合处理关联的log。在用户反馈问题时，仅需提供request_id，我们很容易地就能找到这个请求的所有日志。
@@ -85,11 +85,17 @@ request_id关联的，这样可以根据request_id聚合处理关联的log。在
 另外，我们也会每个request_id记录对应请求的监控数据，如响应码、请求处理耗费的时间、请求的调用方、请求处理的路由等。这样在对监控数据进行数据可视化后，
 可以主动发现某些隐藏的问题。
 
+##### 兼容
+
+在某些情况下，客户端库或工具可能并不支持HTTP协议谓词PUT和DELETE，那么基于这两个谓词的RESTful
+API就需要提供兼容方案。我们的兼容方案是：以POST谓词来替代PUT和DELETE，同时在API请求URL的查询字符串中添加_method一项，指明POST替代的是PUT还是DELETE。如以`POST
+/xxx/yyy/?_method=DELETE`作为`DELETE /xxx/yyy/`的兼容方案。
+
 ### 实现
 
 我们的开放API是基于Yii框架实现。
 
-#### 路由
+##### 路由
 
 Yii框架默认的路由形式为：查询字符串r=xxx/yyy，其中xxx为控制器(controller)的名称，yyy为动作方法(action)的名称，这种路由形式对应Yii内部的get路由类型，
 因为是默认形式，所以无需额外配置。
@@ -112,7 +118,36 @@ urlManager是Yii使用的路由管理组件，其中的urlFormat指明使用path
 xxx为控制器名称，yyy为动作方法名称，这里可以看出HTTP API URL中的控制器名称、动作方法名称可以和实际的控制器类名称、动作方法名称不一样。verb元素指明
 当前路由配置项会处理哪个或哪些HTTP谓词对URL“/xxx/yyy”的请求，多个谓词时以逗号分隔。
 
-#### 响应码
+##### 兼容方案
+
+对于兼容方案，POST谓词原本是用来“新增”资源，那么对于相同的URL，POST谓词可能已经被占用，也即意味着谓词“DELETE”或“PUT”的“POST”兼容方案的API请求，也会被Yii框架路由到“新增”资源的处理逻辑，那么需要在“新增”资源的控制器类的beforeAction方法中，通过检查查询字符串参数_method，重新将请求路由到正确的
+动作方法上，代码如下所示：
+
+    :::php
+    protected function beforeAction($action)
+    {
+        $this->requestMethod = Yii::app()->request->getRequestType();
+        // 兼容方案
+        // 带参数_method=DELETE的POST请求来代替DELETE请求
+        // 带参数_method=PUT的POST请求来代替PUT请求
+        if ($this->requestMethod === 'POST' && isset($_POST['_method'])) {
+            if ($_POST['_method'] === 'DELETE') {
+                // 避免死循环
+                unset($_POST['_method']);
+                $this->forward($this->getUniqueId() . '/delete');
+            } elseif ($_POST['_method'] === 'PUT') {
+                unset($_POST['_method']);
+                $this->forward($this->getUniqueId() . '/update');
+            } else {
+                $this->echoJson(CodeStatus::WRONG_PARAM);
+                return false;
+            }
+        }
+        ...
+    }
+
+
+##### 响应码
 
 对于API可能用到的所有响应码及其说明，我们使用一个单独的类来集中管理，以避免API中硬编码响应码，以及避免代码重复。如下所示：
 
@@ -133,17 +168,23 @@ xxx为控制器名称，yyy为动作方法名称，这里可以看出HTTP API UR
 
             ...
 
-        public static $status_code = array(
-            self::OK => '成功',
-            self::CREATED => '创建成功',
-            self::TOKEN_WRONG => 'token已过期或不存在',
-            self::LACK_PARAM => '缺少必要的请求参数',
-            self::SYSTEM_ERROR => '系统异常',
-            self::WRONG_PARAM => '请求参数不正确',
-            self::DUPLICATE_RESOURCE => '已经存在相同的资源',
-            self::NOT_FOUND => '资源不存在',
-            ...
-        );
-    }
+            public static $status_code = array(
+                self::OK => '成功',
+                self::CREATED => '创建成功',
+                self::TOKEN_WRONG => 'token已过期或不存在',
+                self::LACK_PARAM => '缺少必要的请求参数',
+                self::SYSTEM_ERROR => '系统异常',
+                self::WRONG_PARAM => '请求参数不正确',
+                self::DUPLICATE_RESOURCE => '已经存在相同的资源',
+                self::NOT_FOUND => '资源不存在',
+                ...
+            );
+        }
 
 API中仅需使用CodeStatus类定义的常量成员即可（如CodeStatus::OK）。
+
+
+### 推荐阅读
+
+- [Github API v3](https://developer.github.com/v3/)
+- [Heroku HTTP API Design Guide](https://github.com/interagent/http-api-design)
