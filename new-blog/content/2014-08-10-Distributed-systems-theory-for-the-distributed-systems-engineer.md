@@ -1,4 +1,4 @@
-Title: 面向分布式系统工程师的分布式系统理论
+Title: 面向分布式系统工程师的分布式系统理论（译）
 Date: 2014-08-10
 Author: youngsterxyf
 Slug: Distributed-systems-theory-for-the-distributed-systems-engineer
