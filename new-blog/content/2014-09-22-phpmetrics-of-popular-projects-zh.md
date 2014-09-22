@@ -1,14 +1,14 @@
-Title: 流行PHP开源项目的phpmetrics分析（译）
+Title: 流行PHP项目的phpmetrics分析（译）
 Date: 2014-09-22
 Author: youngsterxyf
 Slug: phpmetrics-of-popular-php-projects
-Tags: 翻译, PHP, 开源
+Tags: 翻译, PHP
 
 原文：[phpmetrics of popular php projects](https://peteraba.com/blog/phpmetrics-of-popular-projects/)
 
 译者：[youngsterxyf](https://github.com/youngsterxyf)
 
-之前我偶然发现了一个名为[phpmetrics](http://www.phpmetrics.org/)的新工具，可用于计算及展示php的度量指标。我当时立马喜欢上了这个工具，并决定用它分析我认为重要的一些php项目。
+之前我偶然发现一个名为[phpmetrics](http://www.phpmetrics.org/)的新工具，可用于计算及展示php的度量指标。我当时立马喜欢上了这个工具，并决定用它分析我认为重要的一些php项目。
 我知道这个项目列表还远远不够完善，但应该仍然值得一看。我特别喜欢其中的“可维护性”报告，我发现视觉上那些红色的斑点就和丑陋的代码一样令人厌恶。
 
 这个工具貌似还有点小bug，我会尽力尽快修复这个工具项目的这些小问题。
@@ -73,7 +73,7 @@ Tags: 翻译, PHP, 开源
 
 项目：[codeigniter](https://ellislab.com/codeigniter)
 
-可维护性：![codeigniter-phpmetrics](/assets/uploads/pics/phpmetric-result/codeigniter-phpmetric-maintenability.png)
+可维护性：![codeigniter-phpmetrics](/assets/uploads/pics/phpmetrics-result/codeigniter-phpmetric-maintenability.png)
 
 分析报告：[戳这里](https://peteraba.com/metrics/phpmetrics/codeigniter/report.html)
 
