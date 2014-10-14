@@ -16,14 +16,14 @@ Tags: 翻译, 日志, 架构
 
 #### 收集
 
-应用程序以不同的方式产生日志，一些是提供syslog，其他一些是直接写到文件。如果考虑一个运行在linux主机上的典型web应用，在`/var/log`目录会有十几个甚至更多的日志文件，
+应用程序以不同的方式产生日志，一些是通过syslog，其他一些是直接写到文件。考虑一个运行在linux主机上的典型web应用，在`/var/log`目录会有十几个甚至更多的日志文件，
 如果一些应用指定日志存放在HOME目录或者其他位置，则这些目录下也是如此。
 
-如果你正在支持一个基于web的应用，开发人员或者运维同事需要快速地访问日志数据以便对线上问题进行排错，那么就需要一个能够近乎实时监控日志文件变化的方案。
-如果你使用基于日志拷贝的方式 --- 文件以固定的时间间隔拷贝到一台中心服务器上，那么你仅能检查与复制操作频率相同的新增日志数据。当站点已经挂掉，而你正在等待相关日志数据的复制，
+如果你正在运营一个基于web的应用，开发人员或者运维同事需要快速地访问日志数据以便对线上问题进行排错，那么就需要一个能够近乎实时监控日志文件变化的方案。
+如果使用基于日志拷贝的方式 --- 文件以固定的时间间隔拷贝到一台中心服务器上，那么仅能检查与复制操作频率相同的新增日志数据。当站点已经挂掉，而你正在等待相关日志数据的复制，
 那么一分钟一次的 rsync cron 任务也许还不够快。
 
-从另外一个角度来看，如果你需要分析线下日志数据，计算各种度量指标，或者其他批量工作，那么文件复制的策略也许正合适。
+从另外一个角度来看，如果你需要分析线下日志数据，计算各种度量指标，或者其他批量的工作，文件复制的策略也许正合适。
 
 
 #### 传输
@@ -32,7 +32,7 @@ Tags: 翻译, 日志, 架构
 
 [Scribe](https://github.com/facebookarchive/scribe)、[Flume](http://flume.apache.org/)、[Heka](https://github.com/mozilla-services/heka)、[Logstash](http://logstash.net/)、
 [Chukwa](http://chukwa.apache.org/)、[fluentd](http://www.fluentd.org/)、[nsq](https://github.com/bitly/nsq)、[Kafka](http://kafka.apache.org/) 这些框架正是被设计用于
-从一个主机到另一个主机可靠地传输大量数据。虽然它们都是用于解决数据传输问题的，但做法却不相同。
+从一个主机到另一个主机可靠地传输大量数据。虽然它们都是用于解决数据传输问题，但做法却不相同。
 
 例如，[Scribe](https://github.com/facebookarchive/scribe)、[nsq](https://github.com/bitly/nsq) 以及 [Kafka](http://kafka.apache.org/)，要求客户端通过它们的API记录日志数据，
 通常，应用程序代码会编写成直接将日志写到这些工具中，这样能够减小延迟，提高可靠性。如果你需要的是中心化的日志文件数据，那么就需要跟踪(tail)日志文件变更，
@@ -47,7 +47,7 @@ Tags: 翻译, 日志, 架构
 
 #### 存储
 
-现在可以传输日志数据了，但数据存放在哪呢？中心化的存储系统需要能够处理随着时间数据的增长。每天都会增加一定量的数据存储，数据量和产生日志数据的主机和进程数量相关。
+现在可以传输日志数据了，但数据存放在哪呢？中心化的存储系统需要能够处理数据随着时间的增长。每天都会增加一定量的数据存储，数据量和产生日志数据的主机和进程数量相关。
 
 如何存储依赖于以下几个问题：
 
@@ -59,7 +59,7 @@ Tags: 翻译, 日志, 架构
 - *应用场景的数据量* --- Google一天的日志数据量肯定远大于ACME运输物资公司（译注：原文是ACME Fishing Supplies，正确的应该是ACME Shipping Supplies）一天的日志。
     你选择的存储系统当数据量增大时应该允许水平扩展。
 
-- *需要如何访问日志* --- 某些存储系统是适于实时甚至批量分析的。AWS Glacier 或磁盘备份加载一个文件就需要花费若干小时。如果需要访问日志进行产品排错，这就不好使了。
+- *需要如何访问日志* --- 某些存储系统是适于实时甚至批量分析的。AWS Glacier 或磁盘备份加载一个文件就需要花费若干小时，如果需要访问日志进行产品排错，这就不好使了。
     如果计划进行更多的交互式数据分析，将日志数据存储到 [ElasticSearch](http://elasticsearch.org/) 或 [HDFS](http://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html)
     让你能够更加有效地使用原始数据。某些日志数据非常庞大，就只能使用面向批量处理的框架进行分析了。这种情况下事实上的标准方案是 [Apache Hadoop](http://hadoop.apache.org/) 
     配合 [HDFS](http://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html)。
@@ -70,8 +70,8 @@ Tags: 翻译, 日志, 架构
 一旦日志已经存到一个中心化存储平台，就需要一种方式来分析日志。最常见的方式是定期执行一个面向批量处理的进程。如果日志是存储在 [HDFS](http://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html) 中，
 那么 [Hive](http://hive.apache.org/) 或 [Pig](http://pig.apache.org/) 相比编写原生MapReduce任务，更易于帮助分析数据。
 
-如果需要一个用于分析的用户界面，可以将解析过的日志数据存到 [ElasticSearch](http://elasticsearch.org/)，然后使用一个前端方案，如 [Kibana](http://kibana.org/) 或 
-[Graylog2](http://www.graylog2.org/)来查询检查数据。日志解析可以通过 [Logstash](http://logstash.net/) 或 [Heka](https://github.com/mozilla-services/heka)，
+如果需要一个用于分析的用户界面，可以将解析过的日志数据存到 [ElasticSearch](http://elasticsearch.org/)，然后使用一个前端方案，如 [Kibana](http://kibana.org/) 或
+[Graylog2](http://www.graylog2.org/)来查询检查数据。日志解析可以通过 [Logstash](http://logstash.net/) 或 [Heka](https://github.com/mozilla-services/heka)来处理，
 应用程序也可以直接以JSON格式记录日志。这种方式允许更加实时、交互式的数据获取，但不适于大批量的处理。
 
 
