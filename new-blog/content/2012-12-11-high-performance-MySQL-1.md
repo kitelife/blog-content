@@ -7,7 +7,7 @@ Tags: 数据库, MySQL
 MySQL逻辑架构
 ------------------
 
-![mysql-arch](http://t-1.tuzhan.com/f2a68c9daf81/p-1/l/2012/12/11/19/8fd27c1742644acd88197408bddc726c.jpg)
+![mysql-arch](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/mysql-arch.jpg)
 
 1.
 每个客户连接在服务器进程中都拥有自己的线程，每个连接所属的查询都会在指定的某个单独线程中完成，这些线程轮流运行在某个CPU核心或CPU上。服务器负责缓存线程，因此不需要为每个新的连接重建或撤销线程。
