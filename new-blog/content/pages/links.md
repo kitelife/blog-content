@@ -17,6 +17,8 @@ Slug: links
 - [众成技术聚乐部](http://happytechgroup.github.io/)
 - [Eli Bendersky](http://eli.thegreenplace.net/)
 - [蛋糕仙人](http://gejiawen.github.io/)
+- [jsDataV.is](http://jsdatav.is/)
+- [淘宝UED](http://ued.taobao.org/blog/)
 - [Pelican](http://getpelican.com/)
 - [explainshell](http://www.explainshell.com/)
 - [All Things Distributed](http://www.allthingsdistributed.com/)
