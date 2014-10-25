@@ -19,6 +19,7 @@ Slug: links
 - [蛋糕仙人](http://gejiawen.github.io/)
 - [jsDataV.is](http://jsdatav.is/)
 - [淘宝UED](http://ued.taobao.org/blog/)
+- [eBay Tech Blog](http://www.ebaytechblog.com/)
 - [Pelican](http://getpelican.com/)
 - [explainshell](http://www.explainshell.com/)
 - [All Things Distributed](http://www.allthingsdistributed.com/)
