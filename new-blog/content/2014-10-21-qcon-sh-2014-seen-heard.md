@@ -318,4 +318,170 @@ AlloyTeam博客：[见这里](http://www.alloyteam.com/)，Github：[见这里](
 
 ------
 
-(未完待续...)
+**跨平台移动应用的自动化验收测试**
+
+演讲人：平安科技 柴锋、高云
+
+内容主要是基于Cucumber实现的一个自动化测试工具
+
+Cucumber官网：[http://cukes.info](http://cukes.info/)，推广“行为驱动的开发”（behaviour driven development - BDD），貌似挺有意思。
+
+------
+
+#### 大数据
+
+**eBay用户行为数据流实时处理系统**
+
+演讲人：eBay 汪兴朗
+
+用户行为数据流是指用户在系统/网站的操作，以及操作之间的前后关系。这些数据经过过滤噪音抽取后可以用于用户行为分析、个性化推荐等。
+
+![ebay-jetstream-arch](/assets/uploads/pics/ebay-jetstream-arch.png)
+
+图中Jetstream是eBay自研的一个系统，貌似年内会开源，可以关注一下。
+
+系统处理好的metrics数据存储在TSDB（OpenTSDB？）中。
+
+![ebay-jetstream-key-tech](/assets/uploads/pics/ebay-jetstream-key-tech.png)
+
+演讲PPT：[见这里](/assets/uploads/files/汪兴郎-eBay用户行为数据流实时处理系统.pdf)
+
+------
+
+**互联网常用场景下的大数据架构解析**
+
+演讲人：MediaV 聚效CTO 胡宁
+
+> 一切不以具体应用为前提谈大数据都是耍流氓！
+
+精准的网络广告和个人化推荐（如网购）的原理是一样的。通过这页PPT看看“精准”“个性化”需要考虑的哪些问题：
+
+![for-precise-advertisement](/assets/uploads/files/for-precise-advertisement.png)
+
+------
+
+**京东基于大数据技术的个性化电商搜索引擎**
+
+演讲人： 京东 刘尚堃
+
+1 . 为什么需要个性化搜索
+
+- 帮助用户从海量商品中快速找到商品
+- 满足不同用户的检索诉求
+- 提升搜索的惊喜性
+- 帮助京东提升长尾商品的曝光
+
+2 . 京东个性化搜索考虑的因素
+
+- 行为
+- 偏好
+	- 用户画像：兴趣、类目、产品、品牌、修饰（主客观）、购买力、性别、敏感度
+	- 偏好三要素：长期偏好、实时偏好、偏好跨平台能力
+- 地域
+	- 身边的陌生人对什么感兴趣
+- 时间
+- 好友
+	- 身边的熟人对什么感兴趣
+
+------
+
+#### 云计算
+
+**云服务-精益创业者的工具箱**
+
+演讲人：英语流利说 胡哲人
+
+- 计算资源 + 数据的存储：阿里云, AWS中国, 青云, UCloud
+- 用户行为的分析：Talking Data, 友盟
+- 多媒体资源的存储和分发：七牛, 又拍云
+- 消息推送：个推，极光推送
+- 系统监控：监控宝，OneAPM
+- 邮件发送：SendCloud
+- 其他：
+	- IM服务：环信/LeanCloud
+	- 社交分享：ShareSDK/友盟
+
+精益创业：创业团队专注自己的产品，快速迭代
+
+------
+
+**环信支持千万并发即时通讯的技术要点**
+
+演讲人：环信联合创始人 刘少壮
+
+![huanxin-1](/assets/uploads/pics/huanxin-1.png)
+
+![huanxin-2](/assets/uploads/pics/huanxin-2.png)
+
+![huanxin-3](/assets/uploads/pics/huanxin-3.png)
+
+![huanxin-4](/assets/uploads/pics/huanxin-4.png)
+
+------
+
+#### 自动化运维
+
+**实时运维数据分析**
+
+演讲人：医树网 曾勇
+
+基于 ElasticSearch + Logstash + Kibana 实现日志的集中收集分析展示。
+
+![yishu-elk-usage](/assets/uploads/pics/yishu-elk-usage.png)
+
+------
+
+**织云自动化运维技术介绍**
+
+演讲人：腾讯 梁定安
+
+1 . 运营规范
+
+- 环境标准化
+- 操作工具化
+- 对象抽象化
+
+一切均可配置，从而达到低维护成本。
+
+2 . 资源设计
+
+![tencent-resource-design](/assets/uploads/pics/tencent-resource-design.png)
+
+------
+
+**海量在线交易背后的运维监控体系建设**
+
+![ctrip-monitor-set](/assets/uploads/pics/ctrip-monitor-set.png)
+
+其中 CATS 用于监控告警追踪管理，包含以下功能：
+
+- 处理报警统一入口
+- 报警信息补充
+- 重复报警去除
+- 报警优先级区分
+- 报警抑制
+- 报警聚合
+- 与工作流系统联动
+
+![ctrip-monitor-future](/assets/uploads/pics/ctrip-monitor-future.png)
+
+![ctrip-monitor-future-arch](/assets/uploads/pics/ctrip-monitor-future-arch.png)
+
+------
+
+#### 互联网金融
+
+#### 隐私与安全
+
+#### 创业
+
+## 吐槽
+
+#### 演讲即招聘
+
+#### 演讲即产品推销
+
+#### 演讲即不知所云
+
+
+## 感想
