@@ -69,3 +69,4 @@ Slug: links
 - [Tengine](http://tengine.taobao.org/index_cn.html)
 - [Google Open Source Blog](http://google-opensource.blogspot.com/)
 - [美团技术团队](http://tech.meituan.com/)
+- [SegmentFault文档镜像](http://mirrors.segmentfault.com/)
