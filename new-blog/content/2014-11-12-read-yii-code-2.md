@@ -31,51 +31,51 @@ Yii框架的路由解析功能由核心组件urlManager来完成。路由的形�
 
 在“请求处理基本流程”一篇可以看到Yii框架路由解析流程的入口在类CWebApplication的processRequest方法中：
 
-	:::php
+    :::php
     $route=$this->getUrlManager()->parseUrl($this->getRequest());
 
 其中getUrlManager方法定义于类CApplication中，作用是初始化获取URL管理组件（ID为urlManager），实现如下：
 
-	:::php
+    :::php
     public function getUrlManager()
-	{
-		return $this->getComponent('urlManager');
-	}
+    {
+        return $this->getComponent('urlManager');
+    }
     
 在获取urlManager组件对象过程中，会对对象做初始化，调用对象的init方法，见类CUrlManager的init方法实现：
 
     :::php
     public function init()
-	{
-		parent::init();
-		$this->processRules();
-	}
+    {
+        parent::init();
+        $this->processRules();
+    }
     
 其中调用的方法processRules，是根据配置的rules解析创建规则对象，放到属性_rules中，实现如下：
 
     :::php
     protected function processRules()
-	{
+    {
         // 如果未配置rules，或使用的路由形式是get，则根本无需解析路由规则
-		if(empty($this->rules) || $this->getUrlFormat()===self::GET_FORMAT)
-			return;
+        if(empty($this->rules) || $this->getUrlFormat()===self::GET_FORMAT)
+            return;
         // 否则尝试从缓存中读取解析好的路由规则
-		if($this->cacheID!==false && ($cache=Yii::app()->getComponent($this->cacheID))!==null)
-		{
-			$hash=md5(serialize($this->rules));
-			if(($data=$cache->get(self::CACHE_KEY))!==false && isset($data[1]) && $data[1]===$hash)
-			{
-				$this->_rules=$data[0];
-				return;
-			}
-		}
+        if($this->cacheID!==false && ($cache=Yii::app()->getComponent($this->cacheID))!==null)
+        {
+            $hash=md5(serialize($this->rules));
+            if(($data=$cache->get(self::CACHE_KEY))!==false && isset($data[1]) && $data[1]===$hash)
+            {
+                $this->_rules=$data[0];
+                return;
+            }
+        }
         // 否则逐条路由规则解析
-		foreach($this->rules as $pattern=>$route)
-			$this->_rules[]=$this->createUrlRule($route,$pattern);
+        foreach($this->rules as $pattern=>$route)
+            $this->_rules[]=$this->createUrlRule($route,$pattern);
         // 尝试缓存解析好的路由规则
-		if(isset($cache))
-			$cache->set(self::CACHE_KEY,array($this->_rules,$hash));
-	}
+        if(isset($cache))
+            $cache->set(self::CACHE_KEY,array($this->_rules,$hash));
+    }
     
 从上述代码中，在解析创建规则对象前会先检查是否已缓存了解析创建好的规则，如果没有，则在解析创建好规则后，将这些规则缓存起来。这样就避免了每次请求处理都要解析一次rules列表。
 但这里需要注意的是**urlManager组件默认使用ID为`cache`的缓存组件（CUrlManager类的属性cacheID默认值为cache），而核心组件并不包含ID为`cache`的缓存组件，所以若希望缓存解析好路由规则，
@@ -85,24 +85,24 @@ Yii框架的路由解析功能由核心组件urlManager来完成。路由的形�
 
     :::php
     /**
-	 * Creates a URL rule instance.
-	 * The default implementation returns a CUrlRule object.
-	 * @param mixed $route the route part of the rule. This could be a string or an array
-	 * @param string $pattern the pattern part of the rule
-	 * @return CUrlRule the URL rule instance
-	 * @since 1.1.0
-	 */
-	protected function createUrlRule($route,$pattern)
-	{
+     * Creates a URL rule instance.
+     * The default implementation returns a CUrlRule object.
+     * @param mixed $route the route part of the rule. This could be a string or an array
+     * @param string $pattern the pattern part of the rule
+     * @return CUrlRule the URL rule instance
+     * @since 1.1.0
+     */
+    protected function createUrlRule($route,$pattern)
+    {
         // 说明可以配置自定义的路由规则解析类
-		if(is_array($route) && isset($route['class']))
-			return $route;
-		else
-		{
-			$urlRuleClass=Yii::import($this->urlRuleClass,true);
-			return new $urlRuleClass($route,$pattern);
-		}
-	}
+        if(is_array($route) && isset($route['class']))
+            return $route;
+        else
+        {
+            $urlRuleClass=Yii::import($this->urlRuleClass,true);
+            return new $urlRuleClass($route,$pattern);
+        }
+    }
     
 以以下rules配置为例：
 
@@ -118,73 +118,73 @@ Yii框架的路由解析功能由核心组件urlManager来完成。路由的形�
 
     :::php
     public function __construct($route,$pattern)
-	{
-		if(is_array($route))
-		{
+    {
+        if(is_array($route))
+        {
             // 从这里可知$route支持'urlSuffix', 'caseSensitive', 'defaultParams', 'matchValue', 'verb', 'parsingOnly'这些配置项
-			foreach(array('urlSuffix', 'caseSensitive', 'defaultParams', 'matchValue', 'verb', 'parsingOnly') as $name)
-			{
-				if(isset($route[$name]))
-					$this->$name=$route[$name];
-			}
+            foreach(array('urlSuffix', 'caseSensitive', 'defaultParams', 'matchValue', 'verb', 'parsingOnly') as $name)
+            {
+                if(isset($route[$name]))
+                    $this->$name=$route[$name];
+            }
             // 如果$route中有pattern配置项，则将配置值赋值给$pattern
-			if(isset($route['pattern']))
-				$pattern=$route['pattern'];
+            if(isset($route['pattern']))
+                $pattern=$route['pattern'];
             // 而$route的第一个配置项才是真正的目标路由
-			$route=$route[0];
-		}
-		$this->route=trim($route,'/');
+            $route=$route[0];
+        }
+        $this->route=trim($route,'/');
 
-		$tr2['/']=$tr['/']='\\/';
+        $tr2['/']=$tr['/']='\\/';
 
-		if(strpos($route,'<')!==false && preg_match_all('/<(\w+)>/',$route,$matches2))
-		{
-			foreach($matches2[1] as $name)
-				$this->references[$name]="<$name>";
-		}
+        if(strpos($route,'<')!==false && preg_match_all('/<(\w+)>/',$route,$matches2))
+        {
+            foreach($matches2[1] as $name)
+                $this->references[$name]="<$name>";
+        }
 
         // 是否带协议头
-		$this->hasHostInfo=!strncasecmp($pattern,'http://',7) || !strncasecmp($pattern,'https://',8);
+        $this->hasHostInfo=!strncasecmp($pattern,'http://',7) || !strncasecmp($pattern,'https://',8);
 
         // 如果原$route有verb配置项
         // verb配置支持多个HTTP方法，以空格或逗号分隔，如：“GET,POST”
-		if($this->verb!==null)
-			$this->verb=preg_split('/[\s,]+/',strtoupper($this->verb),-1,PREG_SPLIT_NO_EMPTY);
+        if($this->verb!==null)
+            $this->verb=preg_split('/[\s,]+/',strtoupper($this->verb),-1,PREG_SPLIT_NO_EMPTY);
 
         // $pattern中类正则片段支持两种形式：命名的和未命名的，如“<id:\d+>”和“<\d+>”
-		if(preg_match_all('/<(\w+):?(.*?)?>/',$pattern,$matches))
-		{
-			$tokens=array_combine($matches[1],$matches[2]);
-			foreach($tokens as $name=>$value)
-			{
-				if($value==='')
-					$value='[^\/]+';
-				$tr["<$name>"]="(?P<$name>$value)";
-				if(isset($this->references[$name]))
-					$tr2["<$name>"]=$tr["<$name>"];
-				else
-					$this->params[$name]=$value;
-			}
-		}
+        if(preg_match_all('/<(\w+):?(.*?)?>/',$pattern,$matches))
+        {
+            $tokens=array_combine($matches[1],$matches[2]);
+            foreach($tokens as $name=>$value)
+            {
+                if($value==='')
+                    $value='[^\/]+';
+                $tr["<$name>"]="(?P<$name>$value)";
+                if(isset($this->references[$name]))
+                    $tr2["<$name>"]=$tr["<$name>"];
+                else
+                    $this->params[$name]=$value;
+            }
+        }
         // 好吧，之后的这段代码我还没太看懂作用
         // 就是为了将$pattern转换成一个真正的正则表达式？
-		$p=rtrim($pattern,'*');
-		$this->append=$p!==$pattern;
-		$p=trim($p,'/');
-		$this->template=preg_replace('/<(\w+):?.*?>/','<$1>',$p);
-		$this->pattern='/^'.strtr($this->template,$tr).'\/';
-		if($this->append)
-			$this->pattern.='/u';
-		else
-			$this->pattern.='$/u';
+        $p=rtrim($pattern,'*');
+        $this->append=$p!==$pattern;
+        $p=trim($p,'/');
+        $this->template=preg_replace('/<(\w+):?.*?>/','<$1>',$p);
+        $this->pattern='/^'.strtr($this->template,$tr).'\/';
+        if($this->append)
+            $this->pattern.='/u';
+        else
+            $this->pattern.='$/u';
 
-		if($this->references!==array())
-			$this->routePattern='/^'.strtr($this->route,$tr2).'$/u';
+        if($this->references!==array())
+            $this->routePattern='/^'.strtr($this->route,$tr2).'$/u';
 
-		if(YII_DEBUG && @preg_match($this->pattern,'test')===false)
-			throw new CException(Yii::t('yii','The URL pattern "{pattern}" for route "{route}" is not a valid regular expression.',
-				array('{route}'=>$route,'{pattern}'=>$pattern)));
-	}
+        if(YII_DEBUG && @preg_match($this->pattern,'test')===false)
+            throw new CException(Yii::t('yii','The URL pattern "{pattern}" for route "{route}" is not a valid regular expression.',
+                array('{route}'=>$route,'{pattern}'=>$pattern)));
+    }
 
 ------
 
@@ -192,36 +192,36 @@ Yii框架的路由解析功能由核心组件urlManager来完成。路由的形�
 
     :::php
     public function parseUrl($request)
-	{
-		if($this->getUrlFormat()===self::PATH_FORMAT)
-		{
-			$rawPathInfo=$request->getPathInfo();
-			$pathInfo=$this->removeUrlSuffix($rawPathInfo,$this->urlSuffix);
-			foreach($this->_rules as $i=>$rule)
-			{
-				if(is_array($rule))
-					$this->_rules[$i]=$rule=Yii::createComponent($rule);
+    {
+        if($this->getUrlFormat()===self::PATH_FORMAT)
+        {
+            $rawPathInfo=$request->getPathInfo();
+            $pathInfo=$this->removeUrlSuffix($rawPathInfo,$this->urlSuffix);
+            foreach($this->_rules as $i=>$rule)
+            {
+                if(is_array($rule))
+                    $this->_rules[$i]=$rule=Yii::createComponent($rule);
                 // 逐个路由规则匹配
-				if(($r=$rule->parseUrl($this,$request,$pathInfo,$rawPathInfo))!==false)
+                if(($r=$rule->parseUrl($this,$request,$pathInfo,$rawPathInfo))!==false)
                     // 即使匹配到了路由规则，也还是得看一下URL中是否指定了路由，是的话则优先使用URL中指定的路由
-					return isset($_GET[$this->routeVar]) ? $_GET[$this->routeVar] : $r;
-			}
+                    return isset($_GET[$this->routeVar]) ? $_GET[$this->routeVar] : $r;
+            }
             // 如果一定要匹配到某个路由规则才行，那么执行到这里就表示未有匹配的路由规则，所以就抛404错误了。
-			if($this->useStrictParsing)
-				throw new CHttpException(404,Yii::t('yii','Unable to resolve the request "{route}".',
-					array('{route}'=>$pathInfo)));
+            if($this->useStrictParsing)
+                throw new CHttpException(404,Yii::t('yii','Unable to resolve the request "{route}".',
+                    array('{route}'=>$pathInfo)));
             // 否则先返回请求路径作为目标路由
-			else
-				return $pathInfo;
-		}
+            else
+                return $pathInfo;
+        }
         // 如果使用的是get路由形式，则从GET请求的查询字符串或POST请求的请求体找目标路由
-		elseif(isset($_GET[$this->routeVar]))
-			return $_GET[$this->routeVar];
-		elseif(isset($_POST[$this->routeVar]))
-			return $_POST[$this->routeVar];
-		else
-			return '';
-	}
+        elseif(isset($_GET[$this->routeVar]))
+            return $_GET[$this->routeVar];
+        elseif(isset($_POST[$this->routeVar]))
+            return $_POST[$this->routeVar];
+        else
+            return '';
+    }
     
 方法的参数是一个request组件对象。
 
@@ -231,60 +231,60 @@ Yii框架的路由解析功能由核心组件urlManager来完成。路由的形�
 
     :::php
     public function parseUrl($manager,$request,$pathInfo,$rawPathInfo)
-	{
+    {
         // 先检查HTTP谓词（verb）是否匹配
-		if($this->verb!==null && !in_array($request->getRequestType(), $this->verb, true))
-			return false;
+        if($this->verb!==null && !in_array($request->getRequestType(), $this->verb, true))
+            return false;
         // 是否关心大小写
-		if($manager->caseSensitive && $this->caseSensitive===null || $this->caseSensitive)
-			$case='';
-		else
-			$case='i';
+        if($manager->caseSensitive && $this->caseSensitive===null || $this->caseSensitive)
+            $case='';
+        else
+            $case='i';
 
         // urlSiffix配置项是用来干嘛的？
-		if($this->urlSuffix!==null)
-			$pathInfo=$manager->removeUrlSuffix($rawPathInfo,$this->urlSuffix);
+        if($this->urlSuffix!==null)
+            $pathInfo=$manager->removeUrlSuffix($rawPathInfo,$this->urlSuffix);
 
-		// URL suffix required, but not found in the requested URL
-		if($manager->useStrictParsing && $pathInfo===$rawPathInfo)
-		{
-			$urlSuffix=$this->urlSuffix===null ? $manager->urlSuffix : $this->urlSuffix;
-			if($urlSuffix!='' && $urlSuffix!=='/')
-				return false;
-		}
+        // URL suffix required, but not found in the requested URL
+        if($manager->useStrictParsing && $pathInfo===$rawPathInfo)
+        {
+            $urlSuffix=$this->urlSuffix===null ? $manager->urlSuffix : $this->urlSuffix;
+            if($urlSuffix!='' && $urlSuffix!=='/')
+                return false;
+        }
 
-		if($this->hasHostInfo)
-			$pathInfo=strtolower($request->getHostInfo()).rtrim('/'.$pathInfo,'/');
+        if($this->hasHostInfo)
+            $pathInfo=strtolower($request->getHostInfo()).rtrim('/'.$pathInfo,'/');
 
-		$pathInfo.='/';
+        $pathInfo.='/';
 
         // 正则匹配：用pattern来匹配路径
-		if(preg_match($this->pattern.$case,$pathInfo,$matches))
-		{
+        if(preg_match($this->pattern.$case,$pathInfo,$matches))
+        {
             // 可以配置defaultParams数组来为请求未提供的必要参数指定默认值
-			foreach($this->defaultParams as $name=>$value)
-			{
-				if(!isset($_GET[$name]))
-					$_REQUEST[$name]=$_GET[$name]=$value;
-			}
-			$tr=array();
-			foreach($matches as $key=>$value)
-			{
-				if(isset($this->references[$key]))
-					$tr[$this->references[$key]]=$value;
-				elseif(isset($this->params[$key]))
-					$_REQUEST[$key]=$_GET[$key]=$value;
-			}
-			if($pathInfo!==$matches[0]) // there're additional GET params
-				$manager->parsePathInfo(ltrim(substr($pathInfo,strlen($matches[0])),'/'));
-			if($this->routePattern!==null)
-				return strtr($this->route,$tr);
-			else
-				return $this->route;
-		}
-		else
-			return false;
-	}
+            foreach($this->defaultParams as $name=>$value)
+            {
+                if(!isset($_GET[$name]))
+                    $_REQUEST[$name]=$_GET[$name]=$value;
+            }
+            $tr=array();
+            foreach($matches as $key=>$value)
+            {
+                if(isset($this->references[$key]))
+                    $tr[$this->references[$key]]=$value;
+                elseif(isset($this->params[$key]))
+                    $_REQUEST[$key]=$_GET[$key]=$value;
+            }
+            if($pathInfo!==$matches[0]) // there're additional GET params
+                $manager->parsePathInfo(ltrim(substr($pathInfo,strlen($matches[0])),'/'));
+            if($this->routePattern!==null)
+                return strtr($this->route,$tr);
+            else
+                return $this->route;
+        }
+        else
+            return false;
+    }
     
 从上述代码可以看出，路由解析关键是根据$pattern匹配请求URL，并**从URL取出需要的东西作为请求参数**，一旦匹配，就以$route作为该次请求的目标路由。
 
