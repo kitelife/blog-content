@@ -9,7 +9,7 @@ Tags: PHP, Yii, 笔记, 总结
 Yii中，对Model层的使用，有两种方式：
 
 1. 通过类CDbConnection和CDbCommand来操作
-2. 使用ORM形式：编写model类继承自类CActiveRecord
+2. 使用ORM形式：编写model类继承自抽象类CActiveRecord
 
 第1种方式的示例如下：
 
@@ -81,16 +81,7 @@ Yii框架model层的入口为CDbConnection类，该类有很多public的属性�
             }
             catch(PDOException $e)
             {
-                if(YII_DEBUG)
-                {
-                    throw new CDbException('CDbConnection failed to open the DB connection: '.
-                        $e->getMessage(),(int)$e->getCode(),$e->errorInfo);
-                }
-                else
-                {
-                    Yii::log($e->getMessage(),CLogger::LEVEL_ERROR,'exception.CDbException');
-                    throw new CDbException('CDbConnection failed to open the DB connection.',(int)$e->getCode(),$e->errorInfo);
-                }
+                // 省略
             }
         }
     }
@@ -314,23 +305,10 @@ open方法中调用的方法createPdoInstance实现如下：
         }
         catch(Exception $e)
         {
-            if($this->_connection->enableProfiling)
-                Yii::endProfile('system.db.CDbCommand.execute('.$this->getText().$par.')','system.db.CDbCommand.execute');
-
-            $errorInfo=$e instanceof PDOException ? $e->errorInfo : null;
-            $message=$e->getMessage();
-            Yii::log(Yii::t('yii','CDbCommand::execute() failed: {error}. The SQL statement executed was: {sql}.',
-                array('{error}'=>$message, '{sql}'=>$this->getText().$par)),CLogger::LEVEL_ERROR,'system.db.CDbCommand');
-
-            if(YII_DEBUG)
-                $message.='. The SQL statement executed was: '.$this->getText().$par;
-
-            throw new CDbException(Yii::t('yii','CDbCommand failed to execute the SQL statement: {error}',
-                array('{error}'=>$message)),(int)$e->getCode(),$errorInfo);
+            // 省略
         }
     }
 
-    :::php
     public function query($params=array())
     {
         return $this->queryInternal('',0,$params);
@@ -414,19 +392,7 @@ open方法中调用的方法createPdoInstance实现如下：
         }
         catch(Exception $e)
         {
-            if($this->_connection->enableProfiling)
-                Yii::endProfile('system.db.CDbCommand.query('.$this->getText().$par.')','system.db.CDbCommand.query');
-
-            $errorInfo=$e instanceof PDOException ? $e->errorInfo : null;
-            $message=$e->getMessage();
-            Yii::log(Yii::t('yii','CDbCommand::{method}() failed: {error}. The SQL statement executed was: {sql}.',
-                array('{method}'=>$method, '{error}'=>$message, '{sql}'=>$this->getText().$par)),CLogger::LEVEL_ERROR,'system.db.CDbCommand');
-
-            if(YII_DEBUG)
-                $message.='. The SQL statement executed was: '.$this->getText().$par;
-
-            throw new CDbException(Yii::t('yii','CDbCommand failed to execute the SQL statement: {error}',
-                array('{error}'=>$message)),(int)$e->getCode(),$errorInfo);
+            // 省略
         }
     }
 
@@ -512,7 +478,9 @@ CActiveRecord类的save方法的实现如下：
         if($this->beforeSave())
         {
             Yii::trace(get_class($this).'.insert()','system.db.ar.CActiveRecord');
+            // ...
             $builder=$this->getCommandBuilder();
+            // ...
             $table=$this->getMetaData()->tableSchema;
             $command=$builder->createInsertCommand($table,$this->getAttributes($attributes));
             if($command->execute())
@@ -746,6 +714,8 @@ getDbConnection方法返回的是一个CDbConnection对象，其getSchema方法�
             }
             
             // 先尝试从缓存中取数据表结构信息
+            // CDbConnection类的schemaCachingDuration属性默认为0，如果不配置该属性，那么就不会使用缓存，那么每次增、删、改、查操作都需要loadTable，
+            // 对数据库的压力，以及性能影响是不是很大？！但如果加了缓存，那么当对数据表的结构做变更时会不会有问题？
             if(!isset($this->_cacheExclude[$name]) && ($duration=$this->_connection->schemaCachingDuration)>0 && $this->_connection->schemaCacheID!==false && ($cache=Yii::app()->getComponent($this->_connection->schemaCacheID))!==null)
             {
                 $key='yii:dbschema'.$this->_connection->connectionString.':'.$this->_connection->username.':'.$name;
