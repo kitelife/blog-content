@@ -247,7 +247,7 @@ Yii中对页面模板进行渲染可以调用`CController`类（见文件`yii/fr
     }
 
 `renderFile`中`$content=$renderer->renderFile($this,$viewFile,$data,$return);`一行调用的renderFile方法，在抽象类CViewRenderer中定义如下：
-；
+
     :::php
     public function renderFile($context,$sourceFile,$data,$return)
     {
