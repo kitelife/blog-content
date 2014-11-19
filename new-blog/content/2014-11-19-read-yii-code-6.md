@@ -181,6 +181,9 @@ Tags: PHP, Yii, 笔记, 总结
         else
             // 否则，使用指定的方法进行反序列化
             $value=call_user_func($this->serializer[1], $value);
+        // 依赖检查，如果依赖没有变，则说明缓存有效，
+        // 否则，返回false，表示缓存无效
+        // 咦，不要清掉无效的缓存项么？
         if(is_array($value) && (!$value[1] instanceof ICacheDependency || !$value[1]->getHasChanged()))
         {
             Yii::trace('Serving "'.$id.'" from cache','system.caching.'.get_class($this));
@@ -229,8 +232,11 @@ Tags: PHP, Yii, 笔记, 总结
         Yii::trace('Saving "'.$id.'" to cache','system.caching.'.get_class($this));
 
         if ($dependency !== null && $this->serializer !== false)
+            // 获取依赖值
             $dependency->evaluateDependency();
 
+        // 连同依赖一起序列化然后缓存起来
+        // 下次获取缓存后，检查一下依赖是否发生变更，是则说明缓存已经失效
         if ($this->serializer === null)
             $value = serialize(array($value,$dependency));
         elseif ($this->serializer !== false)
@@ -325,3 +331,111 @@ Tags: PHP, Yii, 笔记, 总结
         return $this->_cache->flush();
     }
 
+方法`get`、`mget`、`set`、`add`、`delete`、`flush`的实现有两点需要注意：
+
+1. 实际存储的key并不是方法调用时提供的key，而是经过方法`generateUniqueKey`处理的
+2. 实际存储的value可能是经过序列化的，而且可能还包含依赖值
+
+关于第一点，`generateUniqueKey`方法在抽象类`CCache`中实现如下所示：
+
+    :::php
+    /**
+     * @param string $key a key identifying a value to be cached
+     * @return string a key generated from the provided key which ensures the uniqueness across applications
+     */
+    protected function generateUniqueKey($key)
+    {
+        return $this->hashKey ? md5($this->keyPrefix.$key) : $this->keyPrefix.$key;
+    }
+
+将原本的$key拼接上统一的前缀，如果需要，还进行md5哈希，这样能保证不同的应用之间不会有key冲突。属性hashKey默认值为true。
+
+------
+
+关于第二点，缓存依赖的概念简单来说就是在取到一个缓存项后，判断该缓存项是否失效的一个条件。
+以页面缓存为例，也许应用中在页面模板渲染后并没有直接将结果响应给用户，而是先缓存起来，但页面可能涉及一些动态内容，这些动态内容是从数据库中某些数据生成的，为了保证正确性，下次读取页面缓存后，还得去数据库里读一下某些相关数据看是否有变更，，如果有变更，则需要重新渲染页面模板，如果没有变更，则直接将缓存的结果返回给用户。这样对于某些变更频率不高的动态内容，在请求处理时就可以避免不必要的页面模板渲染过程。
+
+判断缓存依赖是否有变更的逻辑是：**在写缓存时，将当时缓存依赖的结果一并存入缓存，读缓存的时候，再将最新缓存依赖的结果与之前存入缓存的依赖结果做对比，不相同，则说明有变更**。
+
+缓存依赖类需要实现接口`ICacheDependency`，该接口声明了两个方法`evaluateDependency`和`getHasChanged`。
+
+以缓存依赖类`CDbCacheDependency`为例（见文件`yii/framework/caching/dependencies/CDbCacheDependency.php`），
+该类直接继承自类`CCacheDependency`。类`CDbCacheDependency`的作用就是根据一条SQL语句从数据库查询数据，然后根据查询结果来判断缓存是否有效。
+
+父类`CCacheDependency`中实现方法`evaluateDependency`和`getHasChanged`，如下所示：
+
+    :::php
+    /**
+     * Evaluates the dependency by generating and saving the data related with dependency.
+     * This method is invoked by cache before writing data into it.
+     */
+    public function evaluateDependency()
+    {
+        // 判断是否复用缓存依赖结果
+        // 默认为false，可在实例化缓存依赖类时设置
+        // 另外对于PHP来说，这个“复用”也只能是一次请求处理过程中的复用
+        if ($this->reuseDependentData)
+        {
+            // hash方法：求当前对象序列化结果的sha1哈希值
+            $hash=$this->getHash();
+            if(!isset(self::$_reusableData[$hash]['dependentData']))
+                // 如果没有结果可复用，则得重新生成
+                self::$_reusableData[$hash]['dependentData']=$this->generateDependentData();
+            $this->_data=self::$_reusableData[$hash]['dependentData'];
+        }
+        else
+            $this->_data=$this->generateDependentData();
+    }
+    
+    /**
+     * @return boolean whether the dependency has changed.
+     */
+    // 这个方法其实是读缓存时，从缓存数据中取出缓存依赖的部分反序列化后得到一个依赖对象，由该依赖对象调用它的这个方法来判断缓存依赖是否有变更，
+    // 所以它的_data属性是写缓存时的缓存依赖数据
+    public function getHasChanged()
+    {
+        if ($this->reuseDependentData)
+        {
+            $hash=$this->getHash();
+            if(!isset(self::$_reusableData[$hash]['dependentData']))
+                self::$_reusableData[$hash]['dependentData']=$this->generateDependentData();
+            // 不相等，则说明发生了变更
+            return self::$_reusableData[$hash]['dependentData']!=$this->_data;
+        }
+        else
+            return $this->generateDependentData()!=$this->_data;
+    }
+
+但父类`CCacheDependency`并未有效实现上述两个方法中调用的`generateDependentData`方法，在类`CDbCacheDependency`中实现如下：
+
+    :::php
+    protected function generateDependentData()
+    {
+        if($this->sql!==null)
+        {
+            // 获取数据库连接组件对象
+            $db=$this->getDbConnection();
+            // 准备SQL执行，其中sql属性在构造方法中赋值
+            $command=$db->createCommand($this->sql);
+            if(is_array($this->params))
+            {
+                // 绑定参数
+                foreach($this->params as $name=>$value)
+                    $command->bindValue($name,$value);
+            }
+            // 避免从缓存中读取数据库查询结果
+            if($db->queryCachingDuration>0)
+            {
+                // temporarily disable and re-enable query caching
+                $duration=$db->queryCachingDuration;
+                $db->queryCachingDuration=0;
+                $result=$command->queryRow();
+                $db->queryCachingDuration=$duration;
+            }
+            else
+                $result=$command->queryRow();
+            return $result;
+        }
+        else
+            throw new CException(Yii::t('yii','CDbCacheDependency.sql cannot be empty.'));
+    }
