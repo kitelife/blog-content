@@ -50,7 +50,7 @@ Yii框架模块化应用的所有模块默认都是放在`protected/modules`目�
 
 ------
 
-由[Yii源码阅读笔记 - 路由解析](http://youngsterxyf.github.io/2014/11/12/read-yii-code-2/)一文可知，应用配置的加载是抽象类CApplication的构造方法中调用方法`configure`来完成的，
+由[Yii源码阅读笔记 - 请求处理基本流程](http://youngsterxyf.github.io/2014/11/04/read-yii-code-1/)一文可知，应用配置的加载是抽象类CApplication的构造方法中调用方法`configure`来完成的，
 该方法定义于类`CModule`中，实现如下：
 
     :::php
@@ -267,7 +267,7 @@ Yii框架模块化应用的所有模块默认都是放在`protected/modules`目�
 
 ------
 
-注：*以下部分是对[Yii源码阅读笔记 - 请求处理基本流程](http://youngsterxyf.github.io/2014/11/04/read-yii-code-1/)一文的补充。*
+注：*以下部分是对[Yii源码阅读笔记 - 路由解析](http://youngsterxyf.github.io/2014/11/04/read-yii-code-2/)一文的补充。*
 
 前面讨论的方法`createController`中还调用了方法`parseActionParams`来解析获取Action的ID，也定义于类`CWebApplication`中，实现如下：
 
