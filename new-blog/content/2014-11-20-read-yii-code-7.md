@@ -50,7 +50,7 @@ Yii框架模块化应用的所有模块默认都是放在`protected/modules`目�
 
 ------
 
-由[Yii源码阅读笔记 - 请求处理基本流程](http://youngsterxyf.github.io/2014/11/04/read-yii-code-1/)一文可知，应用配置的加载是抽象类CApplication的构造方法中调用方法`configure`来完成的，
+由[Yii源码阅读笔记 - 路由解析](http://youngsterxyf.github.io/2014/11/12/read-yii-code-2/)一文可知，应用配置的加载是抽象类CApplication的构造方法中调用方法`configure`来完成的，
 该方法定义于类`CModule`中，实现如下：
 
     :::php
