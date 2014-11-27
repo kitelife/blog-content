@@ -2,6 +2,12 @@ Title: 技术分享
 Date: 2014-11-14
 Slug: tech-share
 
+
+#### 从源码学习如何正确使用Yii框架
+
+[幻灯片](http://pan.baidu.com/s/1o6uS38Y)
+
+
 #### Git原理与实践
 
 2014-09-21，众成技术聚乐部，[幻灯片](https://github.com/HappyTechGroup/share-material/blob/master/2nd-phase/git-theory-and-practice/git-theory-and-practice.pdf?raw=true)
