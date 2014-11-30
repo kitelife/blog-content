@@ -7,6 +7,8 @@ Slug: tech-share
 
 [幻灯片](http://pan.baidu.com/s/1o6uS38Y)
 
+- [Yii框架原理简介](http://youngsterxyf.github.io/slides/yii-framework.html)，2014-11-30，众成技术聚乐部
+
 
 #### Git原理与实践
 
