@@ -122,6 +122,8 @@ Slug: tools
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 
+- Linux中查看当前所有的资源限制：`ulimit -a`；设置内核可以同时打开的文件描述符的最大值为2048：`ulimit -n 2048`
+
 - 使用HTTP/HTTPS协议push大文件时失败，提示RPC failed; result=22, HTTP code = 411，可能是因为Git默认post数据buffer比较小，需要自己设置下：`git config http.postBuffer 524288000 #Set to 500MB`
 
 - 当git不支持https协议时，可以通过禁用SSL认证来继续使用：`git config --global http.sslVerify false`
