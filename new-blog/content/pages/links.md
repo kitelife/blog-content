@@ -35,3 +35,4 @@ Slug: links
 - [美团技术团队](http://tech.meituan.com/)
 - [SegmentFault文档镜像](http://mirrors.segmentfault.com/)
 - [Pythoner](http://www.pythoner.com/)
+- [Lucida](http://zh.lucida.me/)
