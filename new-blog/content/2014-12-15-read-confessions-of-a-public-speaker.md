@@ -70,4 +70,4 @@ Tags: 笔记, 演讲
 
 ![read-confessions-of-a-public-speaker](/assets/uploads/pics/read-confessions-of-a-public-speaker.png)
 
-高清无码大图：[戳这里](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/read-confession-of-a-public-speaker.png)
+高清无码大图：[戳这里](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/read-confessions-of-a-public-speaker.png)
