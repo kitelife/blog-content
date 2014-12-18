@@ -424,3 +424,21 @@ beforeAction通过后，则执行目标action。由于路由配置是类正则�
     }
 
 这个时候你应该感到疑惑 - 既然是一个过滤器链，那么循环在哪？事实上，Yii的这个地方并没有提供循环来让过滤器逐个执行，这就意味着在自定义的过滤器中，如果过滤条件通过，则需要尾递归地显式调用过滤器链的run方法，这样直到所有的过滤器都通过，才执行目标action`$this->controller->runAction($this->action)`。
+
+------
+
+- 2014-12-18 补充：
+
+类YiiBase的方法createApplication：
+
+    :::php
+    public static function createApplication($class, $config=null)
+    {
+        return new $class($config);
+    }
+
+是如何找到`$class`代表的类（CWebApplication或CConsoleApplication类）的呢？类文件`yii/framework/YiiBase.php`的倒数第二行代码为：
+
+`spl_autoload_register(array('YiiBase','autoload'));`
+
+当类文件`yii/framework/yii.php`中 **require** YiiBase类文件时就执行了这句代码。
