@@ -36,3 +36,4 @@ Slug: links
 - [SegmentFault文档镜像](http://mirrors.segmentfault.com/)
 - [Pythoner](http://www.pythoner.com/)
 - [Lucida](http://zh.lucida.me/)
+- [Baidu LAMP](http://lamp.baidu.com/)
