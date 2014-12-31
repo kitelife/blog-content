@@ -6,8 +6,8 @@ Tags: 笔记, Cordova, Phonegap
 
 混合（Hybrid）移动开发将Web开发与原生开发优势互补，之后应该是一个不错的方向。Phonegap是混合移动开发的一个方案，
 开发者可以使用标准的Web技术进行开发，然后使用Phonegap打包成原生APP，也可以为Phonegap开发插件来扩展APP功能。
-Cordova是Apache的顶级项目，起于Adobe贡献给Apache基金会的Phonegap技术源码，之后Phonegap官方貌似则专注于提供Phonegap应用的云构建服务。
-Phonegap官网的文档与Apache Cordova的文档是相同的，所以从技术上可以将Phonegap与Cordova视为同一个东西。
+Cordova是Apache的顶级项目，起于Adobe贡献给Apache基金会的Phonegap源码，之后Phonegap官方貌似则专注于提供Phonegap应用的云构建服务。
+Phonegap官网提供的文档与Apache Cordova文档是相同的，所以从技术上可以将Phonegap与Cordova视为同一个东西。
 
 虽然Phonegap官方提供免费的开放（public）应用以及一个私有应用构建服务。但对于应用调试或插件开发来说，
 使用云构建服务上传源码下载APP还是挺耗时间的，不太方便，所以搭建本地的应用构建环境是必要的。
