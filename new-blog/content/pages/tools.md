@@ -26,7 +26,7 @@ Slug: tools
 - vim + ctags:
     - `Ctrl + ]`自动跳转至定义;
     - `Ctrl + t`返回上一次查看位置。
-- 块操作: 
+- 块操作:
     1. `^` → 到行头；
     2. `<C-v>` → 开始块操作；
     3. `<C-d>` → 向下移动 (你也可以使用hjkl来移动光标，或是使用%，或是别的)；
@@ -84,7 +84,7 @@ Slug: tools
 
 ### Beamer
 
-- [Beamer theme gallery](http://deic.uab.es/~iblanes/beamer_gallery/) 
+- [Beamer theme gallery](http://deic.uab.es/~iblanes/beamer_gallery/)
 - [beamer-theme-matrix](http://www.hartwork.org/beamer-theme-matrix/)
 - [如何准备演讲（beamer版）](http://www.bjt.name/2013/01/beamer-presentation/)
 - [Beamer演示学习笔记](http://zoho.is-programmer.com/user_files/zoho/File/beamerlog-1112.pdf)
@@ -121,6 +121,8 @@ Slug: tools
 - [Windows命令行列表](http://technet.microsoft.com/en-us/library/bb490890.aspx)
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
+
+- 查看所有库/模块的docstring：`python -m pydoc -p 8080`
 
 - Linux中查看当前所有的资源限制：`ulimit -a`；设置内核可以同时打开的文件描述符的最大值为2048：`ulimit -n 2048`
 
