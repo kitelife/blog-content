@@ -37,3 +37,4 @@ Slug: links
 - [Pythoner](http://www.pythoner.com/)
 - [Lucida](http://zh.lucida.me/)
 - [Baidu LAMP](http://lamp.baidu.com/)
+- [James Hamilton](http://mvdirona.com/jrh/work/)
