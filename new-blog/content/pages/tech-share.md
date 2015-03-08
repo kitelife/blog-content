@@ -8,7 +8,7 @@ Slug: tech-share
 
 #### 从源码学习如何正确使用Yii框架
 
-[幻灯片](http://pan.baidu.com/s/1o6uS38Y)，2014-11-27，百度内部分享
+[幻灯片](http://pan.baidu.com/s/1o6uS38Y)，2014-11-27，百度团队内部分享
 
 - [Yii框架原理简介](http://youngsterxyf.github.io/slides/yii-framework.html)，2014-11-30，众成技术聚乐部
 
@@ -25,4 +25,4 @@ Slug: tech-share
 
 #### 运营开发规范化
 
-[幻灯片](http://youngsterxyf.github.io/assets/uploads/files/s-o-p.pdf)
+[幻灯片](http://youngsterxyf.github.io/assets/uploads/files/s-o-p.pdf)，腾讯团队内部分享
