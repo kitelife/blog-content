@@ -2,10 +2,13 @@ Title: 技术分享
 Date: 2014-11-14
 Slug: tech-share
 
+#### Linux系统编程简介系列
+
+- [之一](http://youngsterxyf.github.io/slides/tlpi-1/index.html)，2015-03-08，众成技术聚乐部
 
 #### 从源码学习如何正确使用Yii框架
 
-[幻灯片](http://pan.baidu.com/s/1o6uS38Y)
+[幻灯片](http://pan.baidu.com/s/1o6uS38Y)，2014-11-27，百度内部分享
 
 - [Yii框架原理简介](http://youngsterxyf.github.io/slides/yii-framework.html)，2014-11-30，众成技术聚乐部
 
