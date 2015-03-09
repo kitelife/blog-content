@@ -147,6 +147,9 @@ CLogger类的flush方法实现如下所示：
      */
     public function flush($dumpLogs=false)
     {
+        // 事件对象中会带有当前的CLogger对象，作为事件的发送者
+        // 但在类CLogRouter的方法collectLogs和processLogs中并没有使用这个CLogger对象，
+        // 而是通过Yii::getLogger()来得到同一个CLogger对象，为什么不直接使用呢？
         $this->onFlush(new CEvent($this, array('dumpLogs'=>$dumpLogs)));
         // 清空重置
         $this->_logs=array();
