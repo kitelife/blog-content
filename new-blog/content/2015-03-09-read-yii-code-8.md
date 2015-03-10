@@ -10,12 +10,14 @@ Tags: PHP, Yii, 笔记, 总结
 Yii框架为开发者提供两个静态方法进行日志记录：
 
     :::php
+    <?php
     Yii::log($message, $level, $category);
     Yii::trace($message, $category);
 
 两者的区别在于后者依赖于应用开启调试模式，即定义常量YII_DEBUG：
 
     :::php
+    <?php
     defined('YII_DEBUG') or define('YII_DEBUG', true);
 
 Yii::log方法的调用需要指定message的level和category。category是格式为“xxx.yyy.zzz”的路径别名字符串，比如日志是在yii/framework/web/CController类中记录的，那么category为“system.web.CController”。level应为以下几种之一：
@@ -29,6 +31,7 @@ Yii::log方法的调用需要指定message的level和category。category是格�
 要想日志真的输出到文件、邮件、web页面等地方，还得为应用添加如下配置：
 
     :::php
+    <?php
     array(
         ......
         'preload'=>array('log'),
