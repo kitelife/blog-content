@@ -73,3 +73,10 @@ LATEX = 'article'
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
+
+MD_EXTENSIONS = [
+    'toc',
+    'codehilite(linenums=True,guess_lang=False,pygments_style=colorful,noclasses=True)'
+]
+
+DELETE_OUTPUT_DIRECTORY = True      # 编译之前删除output目录，这样保证output下生成的内容是干净的
