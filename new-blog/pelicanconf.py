@@ -75,7 +75,7 @@ LATEX = 'article'
 #RELATIVE_URLS = True
 
 MD_EXTENSIONS = [
-    'toc',
+    'toc(title=目录)',
     'codehilite(linenums=True,guess_lang=False,pygments_style=colorful,noclasses=True)'
 ]
 
