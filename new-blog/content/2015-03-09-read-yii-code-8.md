@@ -4,7 +4,6 @@ Author: youngsterxyf
 Slug: read-yii-code-8
 Tags: PHP, Yii, 笔记, 总结
 
-[TOC]
 
 ### 使用
 

@@ -74,8 +74,4 @@ LATEX = 'article'
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
-MD_EXTENSIONS = [
-    'toc(title=目录)'
-]
-
 DELETE_OUTPUT_DIRECTORY = True      # 编译之前删除output目录，这样保证output下生成的内容是干净的
