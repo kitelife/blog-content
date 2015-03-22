@@ -15,6 +15,7 @@ Slug: links
 ### 博客
 
 - [众成技术聚乐部](http://happytechgroup.github.io/)
+- [偷着乐读书会](http://happyreading.github.io/)
 - [Eli Bendersky](http://eli.thegreenplace.net/)
 - [蛋糕仙人](http://gejiawen.github.io/)
 - [jsDataV.is](http://jsdatav.is/)
