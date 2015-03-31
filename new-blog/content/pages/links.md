@@ -39,3 +39,4 @@ Slug: links
 - [Lucida](http://zh.lucida.me/)
 - [Baidu LAMP](http://lamp.baidu.com/)
 - [James Hamilton](http://mvdirona.com/jrh/work/)
+- [Life of Xunzhang](http://xunzhangthu.org/)
