@@ -44,7 +44,107 @@ access_token需要通过API向微信服务器获取。成功启用服务号的�
 
 以下Python代码是对自定义菜单API的简单封装：
 
-<script src="https://gist.github.com/youngsterxyf/be823dc38a1c578875b7.js"></script>
+    :::python
+    #coding: utf-8
+
+    import requests
+    import os
+    import json
+    import time
+
+
+    class WechatAdmin:
+        def __init__(self):
+            self.app_id = ''
+            self.app_secret = ''
+            self.session = requests.session()
+            self.access_token_file = 'access_token.json'
+            self.access_token = ''
+
+        def fetch_access_token(self):
+            if self.access_token != '':
+                return self.access_token
+            if os.path.exists(self.access_token_file):
+                with open(self.access_token_file) as fh:
+                    origin_content = json.load(fh)
+                    if float(origin_content['update_time']) + float(origin_content['expires_in']) < time.time():
+                        return self._remote_fetch_access_token()
+                    else:
+                        return origin_content['access_token']
+            else:
+                return self._remote_fetch_access_token()
+
+        def _remote_fetch_access_token(self):
+            target_url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s' \
+                         % (self.app_id, self.app_secret)
+            r = self.session.get(target_url)
+            if r.status_code == 200:
+                response_data = r.json()
+                if response_data.get('access_token', '') != '' and response_data.get('expires_in', '') != '':
+                    new_access_token, expires_in = response_data['access_token'], response_data['expires_in']
+                    with open(self.access_token_file, 'w+') as fh:
+                        json.dump({'access_token': new_access_token, 'expires_in': str(int(expires_in) - 20),
+                                   'update_time': time.time()}, fh)
+                    return new_access_token
+                else:
+                    raise Exception(u'响应内容不对！')
+            else:
+                raise Exception(u'非正常响应，%d' % (r.status_code,))
+
+        def create_menu(self, content):
+            menu_create_api = 'https://api.weixin.qq.com/cgi-bin/menu/create?access_token=%s'
+            target_url = menu_create_api % (self.fetch_access_token(),)
+            try:
+                r = self.session.post(target_url, data=content)
+                if r.status_code == 200:
+                    print r.json()
+                else:
+                    raise Exception(u'非正常响应, %d' % (r.status_code,))
+            except Exception as e:
+                print e.message
+                self._remote_fetch_access_token()
+                self.create_menu(content)
+
+        def fetch_menu(self):
+            target_url = 'https://api.weixin.qq.com/cgi-bin/menu/get?access_token=%s' % (self.fetch_access_token(),)
+            try:
+                r = self.session.get(target_url)
+                if r.status_code == 200:
+                    print r.json()
+                else:
+                    raise Exception(u'非正常响应，%d, %s' % (r.status_code, r.text))
+            except Exception as e:
+                print e.message
+                self._remote_fetch_access_token()
+                self.fetch_menu()
+
+        def delete_menu(self):
+            target_url = 'https://api.weixin.qq.com/cgi-bin/menu/delete?access_token=%s' % (self.fetch_access_token(),)
+            try:
+                r = self.session.get(target_url)
+                if r.status_code == 200:
+                    print r.json()
+                else:
+                    raise Exception(u'非正常响应, %d, %s' % (r.status_code, r.text))
+            except Exception as e:
+                print e.message
+                self._remote_fetch_access_token()
+                self.delete_menu()
+
+
+    def main():
+        wechat = WechatAdmin()
+        # print wechat.fetch_access_token()
+
+        with open('menus.json') as fh:
+            wechat.create_menu(fh.read())
+
+        wechat.fetch_menu()
+        # wechat.delete_menu()
+
+
+    if __name__ == '__main__':
+        main()
 
 ### 开发
 
