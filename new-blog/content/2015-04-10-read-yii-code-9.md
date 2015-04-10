@@ -291,7 +291,7 @@ import配置项的值是一个路径别名数组，路径别名中的application
 
 ------
 
-除了通过import配置项指定autoload的查找路径，从类YiiBase的autoload方法实现可以看到，对于PHP 5.3以上版本，可以使用命名空间的方式来自动查找类，命名空间字符串会被替换成路径别名，所以命名空间字符串应以 `application\\` 开始，如应这样 `application\\models\\UserModel` 来引用models目录下的UserModel类文件，除非额外通过 `Yii::setPathOfAlias`为models路径指定别名。
+除了通过import配置项指定autoload的查找路径，从类YiiBase的autoload方法实现可以看到，对于PHP 5.3以上版本，可以使用命名空间的方式来自动查找类，命名空间字符串会被替换成路径别名，所以命名空间字符串应以 `application\` 开始，如应这样 `application\models\UserModel` 来引用models目录下的UserModel类文件，除非额外通过 `Yii::setPathOfAlias`为models路径指定别名。
 
 另外，类YiiBase中提供了一个静态方法 `registerAutoloader` ：
 
