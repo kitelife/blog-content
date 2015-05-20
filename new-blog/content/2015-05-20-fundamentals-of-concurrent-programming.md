@@ -593,7 +593,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
     	return
 	}
 
-想法很简单：确定合适大小的工作单元，然后在不同的goroutine中执行每个工作单元。以下是并发版本的 `Convolve`：
+思路很简单：确定合适大小的工作单元，然后在不同的goroutine中执行每个工作单元。以下是并发版本的 `Convolve`：
 
 	:::go
     func Convolve(u, v Vector) (w Vector) {
