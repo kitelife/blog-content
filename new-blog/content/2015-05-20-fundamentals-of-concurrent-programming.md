@@ -19,7 +19,7 @@ Tags: 翻译, Golang
 在开始阅读本文之前，你应该知道如何编写简单的Go程序。如果你熟悉的是C/C++、Java或Python之类的语言，那么 [Go语言之旅](http://tour.golang.org/welcome/1) 能提供所有必要的背景知识。也许你还有兴趣读一读 [为C++程序员准备的Go语言教程](http://code.google.com/p/go-wiki/wiki/GoForCPPProgrammers) 或 [为Java程序员准备的Go语言教程](http://www.nada.kth.se/~snilsson/go_for_java_programmers/)。
 
 
-##### 1. 运行期线程
+#### 1. 运行期线程
 
 Go允许使用`go`语句开启一个新的运行期线程，即 [goroutine](http://golang.org/ref/spec#Go_statements)，以一个不同的、新创建的goroutine来执行一个函数。同一个程序中的所有goroutine共享同一个地址空间。
 
@@ -90,7 +90,7 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 一般来说，通过睡眠的方式来编排线程之间相互等待是不太可能的。下一章节会介绍Go语言中的一种同步机制 - 管道，并演示如何使用管道让一个goroutine等待另一个goroutine。
 
 
-##### 2. 管道（channel）
+#### 2. 管道（channel）
 
 ![Sushi conveyor belt](http://www.nada.kth.se/~snilsson/concurrency/sushi-conveyor-belt.jpg)
 
@@ -117,7 +117,7 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 **关闭管道（Close）**
 
-[close](http://golang.org/ref/spec#Close) 函数标志着不会再往某个管道发送值。在调用`close`之后，并且在之前发送的值都被接收后，接收操作会返回一个零值，不会阻塞。一个多返回值的接收操作会额外返回一个布尔值用来指示返回的值是否为发送操作传递的。
+[close](http://golang.org/ref/spec#Close) 函数标志着不会再往某个管道发送值。在调用`close`之后，并且在之前发送的值都被接收后，接收操作会返回一个零值，不会阻塞。一个多返回值的接收操作会额外返回一个布尔值用来指示返回的值是否发送操作传递的。
 
 	:::go
     ch := make(chan string)
@@ -154,7 +154,7 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 [sushi.go](http://www.nada.kth.se/~snilsson/concurrency/src/sushi.go)
 
 
-##### 3. 同步
+#### 3. 同步
 
 下一个示例中，我们让`Publish`函数返回一个管道 - 用于在发布text变量值时广播一条消息：
 
@@ -196,7 +196,7 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 	The news is out, time to leave.
 
 
-##### 4. 死锁
+#### 4. 死锁
 
 ![traffic jam](http://www.nada.kth.se/~snilsson/concurrency/traffic-jam.jpg)
 
@@ -251,7 +251,7 @@ Go语言对于运行时的死锁检测具备良好的支持。当没有任何gor
 大多数情况下找出Go程序中造成死锁的愿意都比较容易，那么剩下的就是如何解决这个bug了。
 
 
-##### 5. 数据竞争（data race）
+#### 5. 数据竞争（data race）
 
 死锁也许听起来令人挺忧伤的，但伴随并发编程真正灾难性的错误其实是数据竞争，相当常见，也可能非常难于调试。
 
@@ -314,7 +314,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 [Go语言内存模型](http://golang.org/ref/mem) - 要保证一个goroutine中对一个变量的读操作得到的值正好是另一个goroutine中对同一个变量写操作产生的值，条件相当复杂，但goroutine之间只要通过管道来共享所有可变数据，那么就能远离数据竞争了。
 
 
-##### 6. 互斥锁
+#### 6. 互斥锁
 
 ![lock](http://www.nada.kth.se/~snilsson/concurrency/lock.jpg)
 
@@ -362,7 +362,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 [datarace.go](http://www.nada.kth.se/~snilsson/concurrency/src/datarace.go)
 
 
-##### 7. 检测数据竞争
+#### 7. 检测数据竞争
 
 竞争有时非常难于检测。下例中的这个函数有一个数据竞争问题，执行这个程序时会输出`55555`。尝试一下，也许你会得到一个不同的结果。（[sync.WaitGroup](http://golang.org/pkg/sync/#WaitGroup)是Go语言标准库的一部分；用于等待一组goroutine结束运行。）
 
@@ -470,7 +470,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 注意：竞争检测器只能发现在运行期确实发生的数据竞争（译注：我也不太理解这话，请指导）
 
 
-##### 8. Select语句
+#### 8. Select语句
 
 [select语句](http://golang.org/ref/spec#Select_statements)是Go语言并发工具集中的最后一个工具。select用于从一组可能的通讯中选择一个进一步处理。如果任意一个通讯都可以进一步处理，则从中随机选择一个，执行对应的语句。否则，如果又没有默认分支（default case），select语句则会阻塞，直到其中一个通讯完成。
 
@@ -506,7 +506,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 函数 [time.After](http://golang.org/pkg/time/#After) 是Go语言标准库的一部分；它会在等待指定时间后将当前的时间发送到返回的管道中。
 
 
-##### 9. 综合所有示例
+#### 9. 综合所有示例
 
 ![couples](http://www.nada.kth.se/~snilsson/concurrency/couples.jpg)
 
@@ -554,7 +554,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 	No one received Dave’s message.
 
 
-##### 10. 并行计算
+#### 10. 并行计算
 
 ![CPUs](http://www.nada.kth.se/~snilsson/concurrency/cpus.jpg)
 
