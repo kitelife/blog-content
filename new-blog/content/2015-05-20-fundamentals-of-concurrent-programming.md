@@ -27,9 +27,9 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 下面所示程序会输出“Hello from main goroutine”。也可能会输出“Hello from another goroutine”，具体依赖于两个goroutine哪个先结束。
 
-	:::go
+    :::go
     func main() {
-    	go fmt.Println("Hello from another goroutine")
+        go fmt.Println("Hello from another goroutine")
         fmt.Println("Hello from main goroutine")
 
         // 至此，程序运行结束，
@@ -40,52 +40,52 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 接下来的这个程序，多数情况下，会输出“Hello from main goroutine”和“Hello from another goroutine”，输出的顺序不确定。但还有另一个可能性是：第二个goroutine运行得极其慢，在程序结束之前都没来得及输出相应的消息。
 
-	:::go
+    :::go
     func main() {
-    	go fmt.Println("Hello from another goroutine")
+        go fmt.Println("Hello from another goroutine")
         fmt.Println("Hello from main goroutine")
 
-        time.Sleep(time.Second)		// 等待1秒，等另一个goroutine结束
+        time.Sleep(time.Second)        // 等待1秒，等另一个goroutine结束
     }
 
 [goroutine2.go](http://www.nada.kth.se/~snilsson/concurrency/src/goroutine2.go)
 
 下面则是一个相对更加实际的示例，其中定义了一个函数使用并发来推迟触发一个事件。
 
-	:::go
+    :::go
     // 函数Publish在给定时间过期后打印text字符串到标准输出
-   	// 该函数并不会阻塞而是立即返回
+       // 该函数并不会阻塞而是立即返回
     func Publish(text string, delay time.Duration) {
-    	go func() {
-        	time.Sleep(delay)
+        go func() {
+            time.Sleep(delay)
             fmt.Println("BREAKING NEWS:", text)
-        }()	// 注意这里的括号。必须调用匿名函数
+        }()    // 注意这里的括号。必须调用匿名函数
     }
 
 [publish1.go](http://www.nada.kth.se/~snilsson/concurrency/src/publish1.go)
 
 你可能会这样使用`Publish`函数：
 
-	:::go
+    :::go
     func main() {
-    	Publish("A goroutine starts a new thread of execution.", 5*time.Second)
+        Publish("A goroutine starts a new thread of execution.", 5*time.Second)
         fmt.Println("Let’s hope the news will published before I leave.")
 
         // 等待发布新闻
-    	time.Sleep(10 * time.Second)
+        time.Sleep(10 * time.Second)
 
-    	fmt.Println("Ten seconds later: I’m leaving now.")
+        fmt.Println("Ten seconds later: I’m leaving now.")
     }
 
 [publish1.go](http://www.nada.kth.se/~snilsson/concurrency/src/publish1.go)
 
 这个程序，绝大多数情况下，会输出以下三行，顺序固定，每行输出之间相隔5秒。
 
-	:::text
+    :::text
     $ go run publish1.go
     Let’s hope the news will published before I leave.
-	BREAKING NEWS: A goroutine starts a new thread of execution.
-	Ten seconds later: I’m leaving now.
+    BREAKING NEWS: A goroutine starts a new thread of execution.
+    Ten seconds later: I’m leaving now.
 
 一般来说，通过睡眠的方式来编排线程之间相互等待是不太可能的。下一章节会介绍Go语言中的一种同步机制 - 管道，并演示如何使用管道让一个goroutine等待另一个goroutine。
 
@@ -96,22 +96,22 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 [管道](http://golang.org/ref/spec#Channel_types)是Go语言的一个构件，提供一种机制用于两个goroutine之间通过传递一个指定类型的值来同步运行和通讯。操作符`<-`用于指定管道的方向，发送或接收。如果未指定方向，则为双向管道。
 
-	:::go
-    chan Sushi		// 可用来发送和接收Sushi类型的值
-    chan<- float64	// 仅可用来发送float64类型的值
-    <-chan int		// 仅可用来接收int类型的值
+    :::go
+    chan Sushi        // 可用来发送和接收Sushi类型的值
+    chan<- float64    // 仅可用来发送float64类型的值
+    <-chan int        // 仅可用来接收int类型的值
 
 管道是引用类型，基于make函数来分配。
 
-	:::go
-    ic := make(chan int)	// 不带缓冲的int类型管道
-    wc := make(chan *Work, 10)	// 带缓冲的Work类型指针管道
+    :::go
+    ic := make(chan int)    // 不带缓冲的int类型管道
+    wc := make(chan *Work, 10)    // 带缓冲的Work类型指针管道
 
 如果压迫通过管道发送一个值，则将`<-`作为二元操作符使用。通过管道接收一个值，则将其作为一元操作符使用：
 
-	:::go
-    ic <- 3		// 往管道发送3
-    work := <-wc	// 从管道接收一个指向Work类型值的指针
+    :::go
+    ic <- 3        // 往管道发送3
+    work := <-wc    // 从管道接收一个指向Work类型值的指针
 
 如果管道不带缓冲，发送方会阻塞直到接收方从管道中接收了值。如果管道带缓冲，发送方则会阻塞直到发送的值被拷贝到缓冲区内；如果缓冲区已满，则意味着需要等待直到某个接收方获取到一个值。接收方在有值可能接收之前会一直阻塞。
 
@@ -119,32 +119,32 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 [close](http://golang.org/ref/spec#Close) 函数标志着不会再往某个管道发送值。在调用`close`之后，并且在之前发送的值都被接收后，接收操作会返回一个零值，不会阻塞。一个多返回值的接收操作会额外返回一个布尔值用来指示返回的值是否发送操作传递的。
 
-	:::go
+    :::go
     ch := make(chan string)
     go func() {
-    	ch <- "Hello!"
+        ch <- "Hello!"
         close(ch)
     }()
-    fmt.Println(<-ch)	// 输出字符串"Hello!"
-    fmt.Println(<-ch)	// 输出零值 - 空字符串""，不会阻塞
-    fmt.Println(<-ch)	// 再次打印输出空字符串""
-    v, ok := <-ch		// 变量v的值为空字符串""，变量ok的值为false
+    fmt.Println(<-ch)    // 输出字符串"Hello!"
+    fmt.Println(<-ch)    // 输出零值 - 空字符串""，不会阻塞
+    fmt.Println(<-ch)    // 再次打印输出空字符串""
+    v, ok := <-ch        // 变量v的值为空字符串""，变量ok的值为false
 
 一个带有`range`子句的`for`语句会依次读取发往管道的值，直到该管道关闭：
 
-	:::go
+    :::go
     func main() {
-    	// 译注：要想运行该示例，需要先定义类型Sushi，如type Sushi string
-    	var ch <-chan Sushi = Producer()
+        // 译注：要想运行该示例，需要先定义类型Sushi，如type Sushi string
+        var ch <-chan Sushi = Producer()
         for s := range ch {
-        	fmt.Println("Consumed", s)
+            fmt.Println("Consumed", s)
         }
     }
 
-	func Producer() <-chan Sushi {
-    	ch := make(chan Sushi)
+    func Producer() <-chan Sushi {
+        ch := make(chan Sushi)
         go func(){
-        	ch <- Sushi("海老握り")	// Ebi nigiri
+            ch <- Sushi("海老握り")    // Ebi nigiri
             ch <- Sushi("鮪とろ握り") // Toro nigiri
             close(ch)
         }()
@@ -158,15 +158,15 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 下一个示例中，我们让`Publish`函数返回一个管道 - 用于在发布text变量值时广播一条消息：
 
-	:::go
+    :::go
     // 在给定时间过期时，Publish函数会打印text变量值到标准输出
     // 在text变量值发布后，该函数会关闭管道wait
     func Publish(text string, delay time.Duration) (wait <-chan struct{}) {
-    	ch := make(chan struct{})
+        ch := make(chan struct{})
         go func() {
-        	time.Sleep(delay)
+            time.Sleep(delay)
             fmt.Println("BREAKING NEWS:", text)
-            close(ch)	// 广播 - 一个关闭的管道都会发送一个零值
+            close(ch)    // 广播 - 一个关闭的管道都会发送一个零值
         }()
         return ch
     }
@@ -177,23 +177,23 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 我们可能会这样使用这个函数：
 
-	:::go
+    :::go
     func main() {
-    	wait := Publish("Channels let goroutines communicate.", 5*time.Second)
+        wait := Publish("Channels let goroutines communicate.", 5*time.Second)
         fmt.Println("Waiting for the news...")
-    	<-wait
-    	fmt.Println("The news is out, time to leave.")
+        <-wait
+        fmt.Println("The news is out, time to leave.")
     }
 
 [publish2.go](http://www.nada.kth.se/~snilsson/concurrency/src/publish2.go)
 
 这个程序会按指定的顺序输出以下三行内容。最后一行在新闻（news）一出就会立即输出。
 
-	:::text
+    :::text
     $ go run publish2.go
-	Waiting for the news...
-	BREAKING NEWS: Channels let goroutines communicate.
-	The news is out, time to leave.
+    Waiting for the news...
+    BREAKING NEWS: Channels let goroutines communicate.
+    The news is out, time to leave.
 
 
 #### 4. 死锁
@@ -202,27 +202,27 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 现在我们在`Publish`函数中引入一个bug：
 
-	:::go
-	func Publish(text string, delay time.Duration) (wait <-chan struct{}) {
-    	ch := make(chan struct{})
-    	go func() {
-        	time.Sleep(delay)
-        	fmt.Println("BREAKING NEWS:", text)
+    :::go
+    func Publish(text string, delay time.Duration) (wait <-chan struct{}) {
+        ch := make(chan struct{})
+        go func() {
+            time.Sleep(delay)
+            fmt.Println("BREAKING NEWS:", text)
             // 译注：注意这里将close函数调用注释掉了
-        	//close(ch)
-    	}()
-    	return ch
-	}
+            //close(ch)
+        }()
+        return ch
+    }
 
 主程序还是像之前一样开始运行：输出第一行，然后等待5秒，这时`Publish`函数开启的goroutine会输出突发新闻（breaking news），然后退出，留下主goroutine独自等待。
 
-	:::go
+    :::go
     func main() {
-    	wait := Publish("Channels let goroutines communicate.", 5*time.Second)
-    	fmt.Println("Waiting for the news...")
+        wait := Publish("Channels let goroutines communicate.", 5*time.Second)
+        fmt.Println("Waiting for the news...")
         // 译注：注意下面这一句
-    	<-wait
-    	fmt.Println("The news is out, time to leave.")
+        <-wait
+        fmt.Println("The news is out, time to leave.")
     }
 
 此刻之后，程序无法再继续往下执行。众所周知，这种情形即为死锁。
@@ -231,22 +231,22 @@ Goroutine非常轻量，除了为之分配的栈空间，其所占用的内存�
 
 Go语言对于运行时的死锁检测具备良好的支持。当没有任何goroutine能够往前执行的情形发生时，Go程序通常会提供详细的错误信息。以下就是我们的问题程序的输出：
 
-	:::text
+    :::text
     Waiting for the news...
-	BREAKING NEWS: Channels let goroutines communicate.
-	fatal error: all goroutines are asleep - deadlock!
+    BREAKING NEWS: Channels let goroutines communicate.
+    fatal error: all goroutines are asleep - deadlock!
 
-	goroutine 1 [chan receive]:
-	main.main()
-    	.../goroutineStop.go:11 +0xf6
+    goroutine 1 [chan receive]:
+    main.main()
+        .../goroutineStop.go:11 +0xf6
 
-	goroutine 2 [syscall]:
-	created by runtime.main
-    	.../go/src/pkg/runtime/proc.c:225
+    goroutine 2 [syscall]:
+    created by runtime.main
+        .../go/src/pkg/runtime/proc.c:225
 
-	goroutine 4 [timer goroutine (idle)]:
-	created by addtimer
-    	.../go/src/pkg/runtime/ztime_linux_amd64.c:73
+    goroutine 4 [timer goroutine (idle)]:
+    created by addtimer
+        .../go/src/pkg/runtime/ztime_linux_amd64.c:73
 
 大多数情况下找出Go程序中造成死锁的原因都比较容易，那么剩下的就是如何解决这个bug了。
 
@@ -259,20 +259,20 @@ Go语言对于运行时的死锁检测具备良好的支持。当没有任何gor
 
 下面的这个函数就有数据竞争问题，其行为是未定义的。例如，可能输出数值1。代码之后是一个可能性解释，试图搞清楚这一切是如何发生得。
 
-	:::go
+    :::go
     func race() {
-    	wait := make(chan struct{})
-    	n := 0
-    	go func() {
-        	// 译注：注意下面这一行
-        	n++ // 一次访问: 读, 递增, 写
-        	close(wait)
-    	}()
+        wait := make(chan struct{})
+        n := 0
+        go func() {
+            // 译注：注意下面这一行
+            n++ // 一次访问: 读, 递增, 写
+            close(wait)
+        }()
         // 译注：注意下面这一行
-    	n++ // 另一次冲突的访问
-    	<-wait
-    	fmt.Println(n) // 输出：未指定
-	}
+        n++ // 另一次冲突的访问
+        <-wait
+        fmt.Println(n) // 输出：未指定
+    }
 
 [datarace.go](http://www.nada.kth.se/~snilsson/concurrency/src/datarace.go)
 
@@ -294,18 +294,18 @@ Go语言对于运行时的死锁检测具备良好的支持。当没有任何gor
 
 Go语言中，处理并发数据访问的推荐方式是使用管道从一个goroutine中往下一个goroutine传递实际的数据。有格言说得好：“不要通过共享内存来通讯，而是通过通讯来共享内存”。
 
-	:::go
+    :::go
     func sharingIsCaring() {
-    	ch := make(chan int)
-    	go func() {
-        	n := 0 // 仅为一个goroutine可见的局部变量.
-        	n++
-        	ch <- n // 数据从一个goroutine离开...
-    	}()
-    	n := <-ch   // ...然后安全到达另一个goroutine.
-    	n++
-    	fmt.Println(n) // 输出: 2
-	}
+        ch := make(chan int)
+        go func() {
+            n := 0 // 仅为一个goroutine可见的局部变量.
+            n++
+            ch <- n // 数据从一个goroutine离开...
+        }()
+        n := <-ch   // ...然后安全到达另一个goroutine.
+        n++
+        fmt.Println(n) // 输出: 2
+    }
 
 [datarace.go](http://www.nada.kth.se/~snilsson/concurrency/src/datarace.go)
 
@@ -324,40 +324,40 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 因此，应该设计一个自定义数据结构，具备明确的API，确保所有的同步都在数据结构内部完成。下例中，我们构建了一个安全、易于使用的并发数据结构，`AtomicInt`，用于存储一个整型值。任意数量的goroutine都能通过`Add`和`Value`方法安全地访问这个数值。
 
-	:::go
+    :::go
     // AtomicInt是一个并发数据结构，持有一个整数值
-	// 该数据结构的零值为0
-	type AtomicInt struct {
-    	mu sync.Mutex // 锁，一次仅能被一个goroutine持有。
-    	n  int
-	}
+    // 该数据结构的零值为0
+    type AtomicInt struct {
+        mu sync.Mutex // 锁，一次仅能被一个goroutine持有。
+        n  int
+    }
 
     // Add方法作为一个原子操作将n加到AtomicInt
-	func (a *AtomicInt) Add(n int) {
-    	a.mu.Lock() // 等待锁释放，然后持有它
-    	a.n += n
-    	a.mu.Unlock() // 释放锁
-	}
+    func (a *AtomicInt) Add(n int) {
+        a.mu.Lock() // 等待锁释放，然后持有它
+        a.n += n
+        a.mu.Unlock() // 释放锁
+    }
 
-	// Value方法返回a的值
-	func (a *AtomicInt) Value() int {
-    	a.mu.Lock()
-    	n := a.n
-    	a.mu.Unlock()
-    	return n
-	}
+    // Value方法返回a的值
+    func (a *AtomicInt) Value() int {
+        a.mu.Lock()
+        n := a.n
+        a.mu.Unlock()
+        return n
+    }
 
-	func lockItUp() {
-    	wait := make(chan struct{})
-    	var n AtomicInt
-    	go func() {
-        	n.Add(1) // 一个访问
-        	close(wait)
-    	}()
-    	n.Add(1) // 另一个并发访问
-    	<-wait
-    	fmt.Println(n.Value()) // 输出: 2
-	}
+    func lockItUp() {
+        wait := make(chan struct{})
+        var n AtomicInt
+        go func() {
+            n.Add(1) // 一个访问
+            close(wait)
+        }()
+        n.Add(1) // 另一个并发访问
+        <-wait
+        fmt.Println(n.Value()) // 输出: 2
+    }
 
 [datarace.go](http://www.nada.kth.se/~snilsson/concurrency/src/datarace.go)
 
@@ -366,21 +366,21 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 竞争有时非常难于检测。下例中的这个函数有一个数据竞争问题，执行这个程序时会输出`55555`。尝试一下，也许你会得到一个不同的结果。（[sync.WaitGroup](http://golang.org/pkg/sync/#WaitGroup)是Go语言标准库的一部分；用于等待一组goroutine结束运行。）
 
-	:::go
+    :::go
     func race() {
-    	var wg sync.WaitGroup
-    	wg.Add(5)
+        var wg sync.WaitGroup
+        wg.Add(5)
         // 译注：注意下面这行代码中的i++
-    	for i := 0; i < 5; i++ {
-        	go func() {
-            	// 注意下一行代码会输出什么？为什么？
-            	fmt.Print(i) // 6个goroutine共享变量i
-            	wg.Done()
-        	}()
-    	}
-    	wg.Wait() // 等待所有（5个）goroutine运行结束
-    	fmt.Println()
-	}
+        for i := 0; i < 5; i++ {
+            go func() {
+                // 注意下一行代码会输出什么？为什么？
+                fmt.Print(i) // 6个goroutine共享变量i
+                wg.Done()
+            }()
+        }
+        wg.Wait() // 等待所有（5个）goroutine运行结束
+        fmt.Println()
+    }
 
 [raceClosure.go](http://www.nada.kth.se/~snilsson/concurrency/src/raceClosure.go)
 
@@ -388,19 +388,19 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 一个简单的解决方案是：使用一个局部变量，然后当开启新的goroutine时，将数值作为参数传递：
 
-	:::go
+    :::go
     func correct() {
-    	var wg sync.WaitGroup
-    	wg.Add(5)
-    	for i := 0; i < 5; i++ {
-        	go func(n int) { // 使用局部变量
-            	fmt.Print(n)
-            	wg.Done()
-        	}(i)
-    	}
-    	wg.Wait()
-    	fmt.Println()
-	}
+        var wg sync.WaitGroup
+        wg.Add(5)
+        for i := 0; i < 5; i++ {
+            go func(n int) { // 使用局部变量
+                fmt.Print(n)
+                wg.Done()
+            }(i)
+        }
+        wg.Wait()
+        fmt.Println()
+    }
 
 [raceClosure.go](http://www.nada.kth.se/~snilsson/concurrency/src/raceClosure.go)
 
@@ -408,20 +408,20 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 仍旧使用闭包，但能够避免数据竞争也是可能的，必须小心翼翼地让每个goroutine使用一个独有的变量。
 
-	:::go
+    :::go
     func alsoCorrect() {
-    	var wg sync.WaitGroup
-    	wg.Add(5)
-    	for i := 0; i < 5; i++ {
-        	n := i // 为每个闭包创建一个独有的变量
-        	go func() {
-            	fmt.Print(n)
-            	wg.Done()
-        	}()
-    	}
-    	wg.Wait()
-    	fmt.Println()
-	}
+        var wg sync.WaitGroup
+        wg.Add(5)
+        for i := 0; i < 5; i++ {
+            n := i // 为每个闭包创建一个独有的变量
+            go func() {
+                fmt.Print(n)
+                wg.Done()
+            }()
+        }
+        wg.Wait()
+        fmt.Println()
+    }
 
 [raceClosure.go](http://www.nada.kth.se/~snilsson/concurrency/src/raceClosure.go)
 
@@ -431,39 +431,39 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 这个工具用起来也很简单：只要在使用`go`命令时加上`-race`标记即可。开启检测器运行上面的程序会给出清晰且信息量大的输出：
 
-	:::text
+    :::text
     $ go run -race raceClosure.go
-	Race:
-	==================
-	WARNING: DATA RACE
-	Read by goroutine 2:
-  	  main.func·001()
+    Race:
+    ==================
+    WARNING: DATA RACE
+    Read by goroutine 2:
+        main.func·001()
           ../raceClosure.go:22 +0x65
 
-	Previous write by goroutine 0:
-  	  main.race()
-      	  ../raceClosure.go:20 +0x19b
-  	  main.main()
-      	  ../raceClosure.go:10 +0x29
-  	  runtime.main()
-      	  ../go/src/pkg/runtime/proc.c:248 +0x91
+    Previous write by goroutine 0:
+        main.race()
+            ../raceClosure.go:20 +0x19b
+        main.main()
+            ../raceClosure.go:10 +0x29
+        runtime.main()
+            ../go/src/pkg/runtime/proc.c:248 +0x91
 
-	Goroutine 2 (running) created at:
-  	  main.race()
+    Goroutine 2 (running) created at:
+        main.race()
           ../raceClosure.go:24 +0x18b
-  	  main.main()
+        main.main()
           ../raceClosure.go:10 +0x29
-   	  runtime.main()
+         runtime.main()
           ../go/src/pkg/runtime/proc.c:248 +0x91
 
-	==================
-	55555
-	Correct:
-	01234
-	Also correct:
-	01324
-	Found 1 data race(s)
-	exit status 66
+    ==================
+    55555
+    Correct:
+    01234
+    Also correct:
+    01324
+    Found 1 data race(s)
+    exit status 66
 
 该工具发现一处数据竞争，包含：一个goroutine在第20行对一个变量进行写操作，跟着另一个goroutine在第22行对同一个变量进行了未同步的读操作。
 
@@ -476,32 +476,32 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 以下是一个玩具示例，演示`select`语句如何用于实现一个随机数生成器：
 
-	:::go
+    :::go
     // RandomBits函数 返回一个管道，用于产生一个比特随机序列
     func RandomBits() <-chan int {
-    	ch := make(chan int)
-    	go func() {
-        	for {
-            	select {
-            	case ch <- 0: // 注意：分支没有对应的处理语句
-            	case ch <- 1:
-            	}
-        	}
-    	}()
-    	return ch
+        ch := make(chan int)
+        go func() {
+            for {
+                select {
+                case ch <- 0: // 注意：分支没有对应的处理语句
+                case ch <- 1:
+                }
+            }
+        }()
+        return ch
     }
 
 [randBits.go](http://www.nada.kth.se/~snilsson/concurrency/src/randBits.go)
 
 下面是相对更加实际一点的例子：如何使用select语句为一个操作设置一个时间限制。代码会输出变量news的值或者超时消息，具体依赖于两个接收语句哪个先执行：
 
-	:::go
+    :::go
     select {
-	case news := <-NewsAgency:
-    	fmt.Println(news)
-	case <-time.After(time.Minute):
-    	fmt.Println("Time out: no news in one minute.")
-	}
+    case news := <-NewsAgency:
+        fmt.Println(news)
+    case <-time.After(time.Minute):
+        fmt.Println("Time out: no news in one minute.")
+    }
 
 函数 [time.After](http://golang.org/pkg/time/#After) 是Go语言标准库的一部分；它会在等待指定时间后将当前的时间发送到返回的管道中。
 
@@ -514,44 +514,44 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 这个程序演示了如何将管道用于被任意数量的goroutine发送和接收数据，也演示了如何将select语句用于从多个通讯中选择一个。
 
-	:::go
+    :::go
     func main() {
-    	people := []string{"Anna", "Bob", "Cody", "Dave", "Eva"}
-    	match := make(chan string, 1) // 为一个未匹配的发送操作提供空间
-    	wg := new(sync.WaitGroup)
-    	wg.Add(len(people))
-    	for _, name := range people {
-        	go Seek(name, match, wg)
-    	}
-    	wg.Wait()
-    	select {
-    	case name := <-match:
-        	fmt.Printf("No one received %s’s message.\n", name)
-    	default:
-        	// 没有待处理的发送操作
-    	}
-	}
+        people := []string{"Anna", "Bob", "Cody", "Dave", "Eva"}
+        match := make(chan string, 1) // 为一个未匹配的发送操作提供空间
+        wg := new(sync.WaitGroup)
+        wg.Add(len(people))
+        for _, name := range people {
+            go Seek(name, match, wg)
+        }
+        wg.Wait()
+        select {
+        case name := <-match:
+            fmt.Printf("No one received %s’s message.\n", name)
+        default:
+            // 没有待处理的发送操作
+        }
+    }
 
     // 函数Seek 发送一个name到match管道或从match管道接收一个peer，结束时通知wait group
-	func Seek(name string, match chan string, wg *sync.WaitGroup) {
-    	select {
-    	case peer := <-match:
-        	fmt.Printf("%s sent a message to %s.\n", peer, name)
-    	case match <- name:
-        	// 等待某个goroutine接收我的消息
-    	}
-    	wg.Done()
-	}
+    func Seek(name string, match chan string, wg *sync.WaitGroup) {
+        select {
+        case peer := <-match:
+            fmt.Printf("%s sent a message to %s.\n", peer, name)
+        case match <- name:
+            // 等待某个goroutine接收我的消息
+        }
+        wg.Done()
+    }
 
 [matching.go](http://www.nada.kth.se/~snilsson/concurrency/src/matching.go)
 
 示例输出：
 
-	:::text
+    :::text
     $ go run matching.go
-	Cody sent a message to Bob.
-	Anna sent a message to Eva.
-	No one received Dave’s message.
+    Cody sent a message to Bob.
+    Anna sent a message to Eva.
+    No one received Dave’s message.
 
 
 #### 10. 并行计算
@@ -568,67 +568,68 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 下面的这个示例展示如何切分一个开销很大的计算并将其分布在所有可用的CPU上进行计算。先看一下有待优化的代码：
 
-	:::go
-	type Vector []float64
+    :::go
+    type Vector []float64
 
     // 函数Convolve 计算 w = u * v，其中 w[k] = Σ u[i]*v[j], i + j = k
     // 先决条件：len(u) > 0, len(v) > 0
-	func Convolve(u, v Vector) (w Vector) {
-    	n := len(u) + len(v) - 1
-    	w = make(Vector, n)
+    func Convolve(u, v Vector) (w Vector) {
+        n := len(u) + len(v) - 1
+        w = make(Vector, n)
 
-    	for k := 0; k < n; k++ {
-        	w[k] = mul(u, v, k)
-    	}
-    	return
-	}
+        for k := 0; k < n; k++ {
+            w[k] = mul(u, v, k)
+        }
+        return
+    }
 
-	// 函数mul 返回 Σ u[i]*v[j], i + j = k.
-	func mul(u, v Vector, k int) (res float64) {
-    	n := min(k+1, len(u))
-    	j := min(k, len(v)-1)
-    	for i := k - j; i < n; i, j = i+1, j-1 {
-        	res += u[i] * v[j]
-    	}
-    	return
-	}
+    // 函数mul 返回 Σ u[i]*v[j], i + j = k.
+    func mul(u, v Vector, k int) (res float64) {
+        n := min(k+1, len(u))
+        j := min(k, len(v)-1)
+        for i := k - j; i < n; i, j = i+1, j-1 {
+            res += u[i] * v[j]
+        }
+        return
+    }
 
 思路很简单：确定合适大小的工作单元，然后在不同的goroutine中执行每个工作单元。以下是并发版本的 `Convolve`：
 
-	:::go
+    :::go
     func Convolve(u, v Vector) (w Vector) {
-    	n := len(u) + len(v) - 1
-    	w = make(Vector, n)
+        n := len(u) + len(v) - 1
+        w = make(Vector, n)
 
         // 将 w 切分成花费 ~100μs-1ms 用于计算的工作单元
-    	size := max(1, 1<<20/n)
+        size := max(1, 1<<20/n)
 
-    	wg := new(sync.WaitGroup)
-    	wg.Add(1 + (n-1)/size)
-    	for i := 0; i < n && i >= 0; i += size { // 整型溢出后 i < 0
-        	j := i + size
-        	if j > n || j < 0 { // 整型溢出后 j < 0
-            	j = n
-        	}
+        wg := new(sync.WaitGroup)
+        wg.Add(1 + (n-1)/size)
+        for i := 0; i < n && i >= 0; i += size { // 整型溢出后 i < 0
+            j := i + size
+            if j > n || j < 0 { // 整型溢出后 j < 0
+                j = n
+            }
 
             // 这些goroutine共享内存，但是只读
-        	go func(i, j int) {
-            	for k := i; k < j; k++ {
-                	w[k] = mul(u, v, k)
-            	}
-            	wg.Done()
-        	}(i, j)
-    	}
-    	wg.Wait()
-    	return
-	}
+            go func(i, j int) {
+                for k := i; k < j; k++ {
+                    w[k] = mul(u, v, k)
+                }
+                wg.Done()
+            }(i, j)
+        }
+        wg.Wait()
+        return
+    }
 
 [convolution.go](http://www.nada.kth.se/~snilsson/concurrency/src/convolution.go)
 
 工作单元定义之后，通常情况下最好将调度工作交给运行时和操作系统。然而，对于Go 1.* 你也许需要告诉运行时希望多少个goroutine来同时地运行代码。
 
-	:::go
+    :::go
     func init() {
-    	numcpu := runtime.NumCPU()
-    	runtime.GOMAXPROCS(numcpu) // 尝试使用所有可用的CPU
-	}
+        numcpu := runtime.NumCPU()
+        runtime.GOMAXPROCS(numcpu) // 尝试使用所有可用的CPU
+    }
+
