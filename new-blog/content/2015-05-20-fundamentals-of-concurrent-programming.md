@@ -472,7 +472,7 @@ Go语言中，处理并发数据访问的推荐方式是使用管道从一个gor
 
 #### 8. Select语句
 
-[select语句](http://golang.org/ref/spec#Select_statements)是Go语言并发工具集中的最后一个工具。select用于从一组可能的通讯中选择一个进一步处理。如果任意一个通讯都可以进一步处理，则从中随机选择一个，执行对应的语句。否则，如果又没有默认分支（default case），select语句则会阻塞，直到其中一个通讯完成。
+[select语句](http://golang.org/ref/spec#Select_statements)是Go语言并发工具集中的终极工具。select用于从一组可能的通讯中选择一个进一步处理。如果任意一个通讯都可以进一步处理，则从中随机选择一个，执行对应的语句。否则，如果又没有默认分支（default case），select语句则会阻塞，直到其中一个通讯完成。
 
 以下是一个玩具示例，演示`select`语句如何用于实现一个随机数生成器：
 
