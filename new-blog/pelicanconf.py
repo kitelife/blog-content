@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 AUTHOR = u'youngsterxyf'
-SITENAME = u'黑 * 白'
+SITENAME = u'黑·白'
 SITEURL = 'http://youngsterxyf.github.io'
 
 TIMEZONE = 'Asia/Shanghai'
@@ -28,7 +28,7 @@ DEFAULT_PAGINATION = 8
 THEME = 'my-gum'
 
 DATE_FORMATS = {
-	'zh': '%Y-%m-%d %a'
+    'zh': '%Y-%m-%d %a'
 }
 RELATIVE_URLS = True
 
@@ -46,14 +46,14 @@ PAGE_SAVE_AS = 'pages/{slug}.html'
 DISPLAY_PAGES_ON_MENU = False
 DISPLAY_CATEGORIES_ON_MENU = False
 MENUITEMS = (
-        (u'归 档', '/archives.html'),
-        (u'标 签', '/tags.html'),
-        (u'工具集', '/pages/tools.html'),
-        (u'链 接', '/pages/links.html'),
-        (u'技术分享', '/pages/tech-share.html'),
-        (u'关于我', '/pages/aboutme.html'),
-        (u'RSS', '/feeds/rss.xml')
-        )
+    (u'归 档', '/archives.html'),
+    (u'标 签', '/tags.html'),
+    (u'工具集', '/pages/tools.html'),
+    (u'链 接', '/pages/links.html'),
+    (u'技术分享', '/pages/tech-share.html'),
+    (u'关于我', '/pages/aboutme.html'),
+    (u'RSS', '/feeds/rss.xml')
+)
 
 GITHUB_URL = 'http://github.com/youngsterxyf'
 TWITTER_URL = 'https://twitter.com/youngsterxyf'
