@@ -40,3 +40,6 @@ Slug: links
 - [Baidu LAMP](http://lamp.baidu.com/)
 - [James Hamilton](http://mvdirona.com/jrh/work/)
 - [Life of Xunzhang](http://xunzhangthu.org/)
+- [huangz](http://huangz.me/)
+
+
