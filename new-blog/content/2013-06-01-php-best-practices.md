@@ -467,7 +467,7 @@ Memcached替代方案相关的信息。
 
 ## PHP与正则表达式
 
-### 使用[PCRE](http://php.net/manual/en/book.pcre.php)(`preg_*`)家族函数
+### 使用 [PCRE](http://php.net/manual/en/book.pcre.php) ( `preg_*` ) 家族函数
 
 PHP有两种使用不同的方式来使用正则表达式：PCRE（Perl兼容表示法，`preg_*`）函数
 和[POSIX](http://php.net/manual/en/book.regex.php)（POSIX扩展表示法，`ereg_*`）
