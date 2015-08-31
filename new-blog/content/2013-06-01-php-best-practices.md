@@ -153,7 +153,7 @@ quotes)”函数的组合来实现。PDO使得那堆东西不再需要。
         // \PDO::MYSQL_ATTR_INIT_COMMAND alerts the connection that we'll be passing UTF-8 data.
         // This may not be required depending on your configuration, but it'll save you headaches down the road
         // if you're trying to store Unicode strings in your database.  See "Gotchas".
-        $link = new \PDO(   'mysql:host=your-hostname;dbname=your-db', 
+        $link = new \PDO( 'mysql:host=your-hostname;dbname=your-db', 
                             'your-username', 
                             'your-password', 
                             array(
@@ -198,8 +198,7 @@ quotes)”函数的组合来实现。PDO使得那堆东西不再需要。
 - 启用持久连接可能会导致怪异的并发相关的问题。这不是一个PHP的问题，而是一个应用层面
 的问题。只要你仔细考虑了后果，持久连接一般会是安全的。查看[Stack
 Overfilow这个问题](http://stackoverflow.com/questions/3332074/what-are-the-disadvantages-of-using-persistent-connection-in-pdo)。
-- 即使你使用了 \`set names utf8mb4\`
-，你也得确认实际的数据库表使用的是utf8mb4字符集！
+- 即使你使用了 `set names utf8mb4` ，你也得确认实际的数据库表使用的是utf8mb4字符集！
 
 - 可以在单个execute()调用中执行多条SQL语句。只需使用分号分隔语句，但注意[这个bug](https://bugs.php.net/bug.php?id=61207)，在该文档所针对的PHP版本中还没修复。
 
