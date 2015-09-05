@@ -4,7 +4,7 @@ Author: youngsterxyf
 Slug: php-trap-and-tip
 Tags: PHP, 笔记
 
-虽说题目是说“PHP坑”，但主要还是因为个人经验不足导致。
+一看题目貌似本文要准备吐槽PHP，但遇到“坑”主要是因为个人经验不足。
 
 #### JSON反序列化 json_decode
 
