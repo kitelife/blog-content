@@ -6,7 +6,7 @@ Tags: PHP, 笔记
 
 虽说题目是说“PHP坑”，但主要还是因为个人经验不足导致。
 
-##### JSON反序列化 json_decode
+#### JSON反序列化 json_decode
 
 函数 `json_decode` 默认反序列化的结果是对象。Python党在做PHP开发用到这个方法时，很可能会跳进这个坑，认为结果应该是个数组，因为Python中json.loads返回的是一个字典。 `json_decode` 的第二个参数 $assoc 可用来指定反序列化的结果为数组。
 
@@ -14,7 +14,7 @@ Tags: PHP, 笔记
 
 ------
 
-##### 数组序列化
+#### 数组序列化
 
 Python党初学PHP，可能类比于Python的列表和字典，认为PHP中明确区分索引数组和关联数组。但：
 
@@ -74,13 +74,14 @@ echo json_encode($arrA) . "\n";
 函数`array_filter`的文档说明：
 
 > array array_filter ( array $input [, callable $callback = "" ] )
+> 
 > 依次将 input 数组中的每个值传递到 callback 函数。如果 callback 函数返回 TRUE，则 input 数组的当前值会被包含在返回的结果数组中。数组的键名保留不变。
 
 注意是对值进行filter，结果中值原本对应的key不变，而不是使用新的key。
 
 文档：[http://php.net/manual/zh/language.types.array.php](http://php.net/manual/zh/language.types.array.php)，[http://php.net/manual/zh/function.array-filter.php](http://php.net/manual/zh/function.array-filter.php)
 
-##### 引用
+#### 引用传递
 
 先来看一段代码：
 
