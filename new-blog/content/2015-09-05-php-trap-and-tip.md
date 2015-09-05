@@ -81,6 +81,8 @@ echo json_encode($arrA) . "\n";
 
 文档：[http://php.net/manual/zh/language.types.array.php](http://php.net/manual/zh/language.types.array.php)，[http://php.net/manual/zh/function.array-filter.php](http://php.net/manual/zh/function.array-filter.php)
 
+------
+
 #### 引用传递
 
 先来看一段代码：
