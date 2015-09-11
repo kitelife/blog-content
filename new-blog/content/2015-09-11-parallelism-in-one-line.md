@@ -1,4 +1,4 @@
-Title: 一行式并行方案
+Title: 一行式并行方案（译）
 Date: 2015-09-11
 Author: youngsterxyf
 Slug: parallelism-in-one-line
