@@ -13,7 +13,7 @@ Tags: PHP, 翻译, 并行
 
 #### 沿袭的例子
 
-在DuckDuckGo（DDG）中搜索“Python多线程教程”，简单调查一下排在前面都结果，就会发现它们给出的都是同样的基于Class + Queue的示例。
+在DuckDuckGo（DDG）中搜索“Python多线程教程”，简单调查一下排在前面的结果，就会发现它们给出的都是同样基于Class + Queue的示例。
 
 *介绍threading/multiprocessing、生产者/消费者的真实示例代码：*
 
