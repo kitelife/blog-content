@@ -7,13 +7,13 @@ Tags: PHP, Yii, 笔记, 总结
 
 ### 概述
 
-PHP区分“错误”（Error）和“异常”（Exception）。“错误”通常是由PHP内部函数抛出，表示运行时问题，当然也可以通过函数trigger_error或user_error抛出一个用户级别的error/warning/notice信息。但在引入面向对象之后，相比使用trigger_error抛出错误，使用throw抛出异常更常用。
+PHP区分“错误”（Error）和“异常”（Exception）。“错误”通常是由PHP内部函数抛出，表示运行时问题，当然也可以通过函数`trigger_error`或`user_error`抛出一个用户级别的error/warning/notice信息。但在引入面向对象之后，相比使用`trigger_error`抛出错误，使用throw抛出异常更常用。
 
-对于“错误”，PHP允许配置报告哪些级别/类型错误、是否（向用户）展示错误、是否对错误记录日志、错误日志记到哪，分别对应php.ini中的配置项：error_reporting、display_errors、log_errors、error_log。详细信息见[这里](http://php.net/manual/zh/language.errors.basics.php)。
+对于“错误”，PHP允许配置报告哪些级别/类型错误、是否（向用户）展示错误、是否对错误记录日志、错误日志记到哪，分别对应php.ini中的配置项：`error_reporting`、`display_errors`、`log_errors`、`error_log`。详细信息见[这里](http://php.net/manual/zh/language.errors.basics.php)。
 
 对于应用程序内层调用抛出的“异常”，一般可以在外层中使用try...catch来捕获并自定义处理过程。但对于“错误”（PHP运行时抛出或者应用程序使用trigger_error抛出的）或者对于-无法使用try...catch来捕获可能的异常/为了做到即使忘记捕获的异常也能得到自定义处理-的情况，该怎么办？对此，PHP提供了函数`set_error_handler`和`set_exception_handler`来注册错误/异常自定义处理过程。如果在程序的执行流中先后多次调用了`set_error_handler`或`set_exception_handler`，后一次注册的处理过程会覆盖前一次的，但可以通过函数`restore_error_handler`或`restore_exception_handler`来恢复前一次注册的异常处理过程。
 
-*之所以写这篇文章，是因为最近在工作中犯了一个低级错误：应用程序中有个API对于不合法的请求参数直接抛出异常（`throw new Exception("xxx")`），却忘了try...catch捕捉，导致异常被Yii框架（我们的应用基于Yii开发）通过set_exception_handler注册的方法处理 - 响应500，之后这个API被一个扫描器拼命扫，导致出现500多的响应，触发了告警。*
+*之所以写这篇文章，是因为最近在工作中犯了一个低级错误：应用程序中有个API对于不合法的请求参数直接抛出异常（`throw new Exception("xxx")`），却忘了try...catch捕捉，导致异常被Yii框架（我们的应用基于Yii开发）通过set_exception_handler注册的方法处理 - 响应500，之后这个API被一个扫描器拼命扫，导致出现很多500响应，触发了告警。*
 
 ### 分析
 
@@ -184,7 +184,7 @@ public function handleError($code,$message,$file,$line)
 }
 ```
 
-从上面代码可以看到，方法`handleException`的关键部分为：
+从上面代码可以看到，方法`handleException`的关键部分（`handleError`类似）为：
 
 ```php
 <?php
@@ -260,7 +260,7 @@ public function raiseEvent($name,$event)
 
 那么是如何注册事件的处理过程的呢？
 
-在类`CComponent`（见文件`base/CComponent.php`，`CApplication`类继承间接继承自该类）中定义了一对方法：`attachEventHandler`（将处理过程绑定到某事件）和`detachEventHandler`（将处理过程从事件解绑）。
+在类`CComponent`（见文件`base/CComponent.php`，`CApplication`类间接继承自该类）中定义了一对方法：`attachEventHandler`（将处理过程绑定到某事件）和`detachEventHandler`（将处理过程从事件解绑）。
 
 方法`attachEventHandler`的实现如下：
 
