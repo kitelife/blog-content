@@ -1,4 +1,4 @@
-Title: Yii源码阅读笔记 - 错误/异常管理
+Title: Yii源码阅读笔记 - 错误/异常处理
 Date: 2015-09-14
 Author: youngsterxyf
 Slug: read-yii-code-10
@@ -22,12 +22,14 @@ PHP区分“错误”（Error）和“异常”（Exception）。“错误”通
 Yii框架在请求处理初始化过程中，在`CApplication`类（见文件`base/CApplication.php`）的构造方法中调用了：
 
 ```php
+<?php
 $this->initSystemHandlers();
 ```
 
 `initSystemHandlers`的实现如下：
 
 ```php
+<?php
 /**
  * Initializes the class autoloader and error handlers.
  */
@@ -45,6 +47,7 @@ protected function initSystemHandlers()
 其中注册的方法`handleException`和`handleError`实现分别如下：
 
 ```php
+<?php
 public function handleException($exception)
 {
 	// disable error capturing to avoid recursive errors
@@ -106,6 +109,7 @@ public function handleException($exception)
 ```
 
 ```php
+<?php
 public function handleError($code,$message,$file,$line)
 {
 	if($code & error_reporting())
@@ -183,6 +187,7 @@ public function handleError($code,$message,$file,$line)
 从上面代码可以看到，方法`handleException`的关键部分为：
 
 ```php
+<?php
 // 将异常封装成事件，并触发事件，从而触发监听该事件的处理过程
 $event=new CExceptionEvent($this,$exception);
 $this->onException($event);
@@ -200,6 +205,7 @@ if(!$event->handled)
 其中方法`onException`的实现如下：
 
 ```php
+<?php
 public function onException($event)
 {
 	$this->raiseEvent('onException',$event);
@@ -209,6 +215,7 @@ public function onException($event)
 `raiseEvent`方法实现如下：
 
 ```php
+<?php
 public function raiseEvent($name,$event)
 {
 	// 根据事件名称，如onException，找到注册到该事件的处理过程，逐个触发调用。
@@ -258,6 +265,7 @@ public function raiseEvent($name,$event)
 方法`attachEventHandler`的实现如下：
 
 ```php
+<?php
 public function attachEventHandler($name,$handler)
 {
 	$this->getEventHandlers($name)->add($handler);
@@ -267,6 +275,7 @@ public function attachEventHandler($name,$handler)
 其中`getEventHandlers`实现如下：
 
 ```php
+<?php
 public function getEventHandlers($name)
 {
 	// 可以关注一下方法hasEvent
@@ -288,6 +297,7 @@ public function getEventHandlers($name)
 回到“方法`handleException`的关键部分”，在事件的handled属性没有置为true的情况下，会调用方法`getErrorHandler `取到内置的一个处理过程，该方法实现如下：
 
 ```php
+<?php
 public function getErrorHandler()
 {
 	// 获取名为errorHandler的组件，该组件默认会在CApplication类的registerCoreComponents方法中注册，
@@ -301,6 +311,7 @@ public function getErrorHandler()
 `CErrorHandler`类的`handle`方法实现如下：
 
 ```php
+<?php
 public function handle($event)
 {
 	// set event as handled to prevent it from being handled by other event handlers
@@ -348,6 +359,7 @@ public function handle($event)
 其中方法`handleException`和`handleError`实现分别如下：
 
 ```php
+<?php
 protected function handleException($exception)
 {
 	$app=Yii::app();
@@ -416,6 +428,7 @@ protected function handleException($exception)
 ```
 
 ```php
+<?php
 protected function handleError($event)
 {
 	$trace=debug_backtrace();
@@ -500,6 +513,7 @@ protected function handleError($event)
 **render**
 
 ```php
+<?php
 protected function render($view,$data)
 {
 	// 注意这个地方，如果配置了errorAction，则可以指定目标controller的某个action来处理错误
@@ -576,6 +590,7 @@ protected function getViewFileInternal($viewPath,$view,$code,$srcLanguage=null)
 **displayError**
 
 ```php
+<?php
 public function displayError($code,$message,$file,$line)
 {
 	if(YII_DEBUG)
@@ -615,6 +630,7 @@ public function displayError($code,$message,$file,$line)
 **displayException**
 
 ```php
+<?php
 public function displayException($exception)
 {
 	if(YII_DEBUG)
