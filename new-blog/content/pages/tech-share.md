@@ -2,6 +2,10 @@ Title: 技术分享
 Date: 2014-11-14
 Slug: tech-share
 
+#### 工作中的那点技术事儿
+
+[幻灯片](http://pan.baidu.com/s/1gdg4xyV)，2015-10-31，众成技术聚乐部
+
 #### Spark浅说
 
 [幻灯片](http://pan.baidu.com/s/1gdB8gLl)，2015-08-29，众成技术聚乐部

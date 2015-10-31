@@ -121,6 +121,7 @@ Slug: tools
 - [Windows命令行列表](http://technet.microsoft.com/en-us/library/bb490890.aspx)
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
+- （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
 
 - 查看所有库/模块的docstring：`python -m pydoc -p 8080`
 
