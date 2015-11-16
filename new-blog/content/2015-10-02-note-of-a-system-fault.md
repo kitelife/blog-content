@@ -2,7 +2,7 @@ Title: 记一次系统故障
 Date: 2015-10-02
 Author: youngsterxyf
 Slug: note-of-a-system-fault
-Tags: 笔记
+Tags: 笔记, 故障
 
 前段时间，工作中遭遇一次故障，虽然不算什么“疑难杂症”，倒也花了不少时间才真正找到故障的原因，故也值得记录一下。
 
@@ -82,3 +82,4 @@ Tags: 笔记
 - [MySQL官方文档 - Replication Master Thread States](http://dev.mysql.com/doc/refman/5.6/en/master-thread-states.html)
 - [MySQL官方文档 - General Thread States](http://dev.mysql.com/doc/refman/5.6/en/general-thread-states.html)
 - [nginx+php-fpm出现502 bad gateway错误解决方法](http://www.nginx.cn/102.html)
+
