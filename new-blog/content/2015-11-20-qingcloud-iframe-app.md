@@ -76,15 +76,15 @@ def hmac_sha256(data, secret_app_key):
     return hmac_256.digest()
 ```
 
-其中HmacSHA256签名算法需要参数 `secret_app_key` ，这个参数值应该青云为你的iframe应用分配的密钥`secret_app_key`，同时，青云会为每个iframe应用分配一个唯一性ID。
+其中HmacSHA256签名算法需要参数 `secret_app_key` ，这个参数值应为青云为你的iframe应用分配的密钥`secret_app_key`，同时，青云会为每个iframe应用分配一个唯一性ID。
 
-如果你的应用需要经第**4**步获取用户相关详细信息，则还需从青云后台获取API密钥（包含`qy_access_key_id` 和 `qy_secret_access_key` 两项），API请求数据也使用了签名算法，并且算法与上述form表单数据所使用的算法相同，青云官方文档对于这一点貌似叙述有误。详细信息见 [青云文档](https://docs.qingcloud.com/app/common/tutorial.html#api)。
+如果你的应用需要经第**4**步获取用户相关详细信息，则还需从青云后台获取API密钥（包含`qy_access_key_id` 和 `qy_secret_access_key` 两项），API请求数据也使用了签名算法，并且算法与上述form表单数据所使用的签名算法相同，青云官方文档对于这一点貌似叙述有误。详细信息见 [青云文档](https://docs.qingcloud.com/app/common/tutorial.html#api)。
 
 ------
 
 在开发青云 iframe 应用过程中，我们遇到了两个问题：
 
-1. 用户可能会在浏览器中只刷新iframe内容，比如chrome浏览器中，在iframe内容区域右击鼠标选择“重新加载框架”。之前说过用户在iframe中的操作都是直接与应用服务器交互的，刷新iframe其实是直接向iframe应用URL发送HTTP请求，而不是提供form表单到URL，所以请求中没有携带校验信息，无法判断请求是否来自青云。
+1. 用户可能会在浏览器中只刷新iframe内容，比如chrome浏览器中，在iframe内容区域右击鼠标选择“重新加载框架”。之前说过用户在iframe中的操作都是直接与应用服务器交互的，刷新iframe其实是直接向iframe应用URL发送HTTP请求，而不是提交form表单到应用URL，所以请求中没有携带校验信息，无法判断请求是否来自青云。
 2. 由于我们的应用服务器有多台，并且未使用集中式session管理，那么如果使用传统的session中记录用户ID的方式，当首次iframe请求之后的请求由不同的服务器来处理，就无法识别出用户。
 
 这两个问题我们都使用了cookie来解决。
