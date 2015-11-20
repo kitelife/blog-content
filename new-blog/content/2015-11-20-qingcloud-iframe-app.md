@@ -20,7 +20,7 @@ Tags: 笔记, 工作, 总结
 
 ```html
 <form method="POST" action="URL" target="appframe">
-    <input type="hidden" name="payload", value="...">
+    <input type="hidden" name="payload" value="...">
     <input type="hidden" name="signature" value="...">
 </form>
 <iframe id="..." name="appframe" width="100%" height="100%" frameborder="0">
