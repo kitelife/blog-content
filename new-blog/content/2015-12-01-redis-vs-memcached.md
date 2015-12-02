@@ -8,6 +8,7 @@ Tags: 翻译, Redis, Memcached
 
 译者：[youngsterxyf](https://github.com/youngsterxyf)
 
+*译注：本文为Redis的作者所写*
 
 如果你了解我，就会知道我并不是那种认为竞品是一件坏事的人。实际上我喜欢用户有选择的空间，因此我很少做将Redis与其他技术做对比这类事情。
 
