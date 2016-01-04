@@ -3,12 +3,18 @@ Date: 2013-11-02
 Author: youngsterxyf
 Slug: aboutme
 
-[个人简历](../assets/uploads/files/resume.pdf)
+- 微信公众号：
 
+<img src="../assets/uploads/pics/wechat-qrcode.jpg" width="160px"></img>
+
+- Github：
 
 <div class="github-card" data-user="youngsterxyf"></div>
 <script src="../assets/github-cards/widget.js"></script>
 
+- [个人简历](../assets/uploads/files/resume.pdf)
+
+------
 
 <div id="coderwall"></div>
 <script type="text/javascript">
@@ -46,3 +52,5 @@ $(function() {
     appendCoderwallBadge();
 });
 </script>
+
+
