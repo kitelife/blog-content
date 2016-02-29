@@ -1,4 +1,4 @@
-Title: 如何杀死defunct进程
+Title: 如何杀死defunct进程（译）
 Date: 2016-02-18
 Author: youngsterxyf
 Slug: kill-defunct
