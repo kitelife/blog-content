@@ -50,7 +50,6 @@ MENUITEMS = (
     (u'工具集', '/pages/tools.html'),
     (u'链 接', '/pages/links.html'),
     (u'技术分享', '/pages/tech-share.html'),
-    (u'下厨房', '/pages/cooking.html'),
     (u'关于我', '/pages/aboutme.html'),
     (u'RSS', '/feeds/rss.xml')
 )
