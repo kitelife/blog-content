@@ -123,6 +123,8 @@ Slug: tools
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 - （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
 
+- 递归查询某目录下的最大文件：`find -type f -exec stat -c "%s %n" {} \; | sort -nr | head -1`
+
 - 查看所有库/模块的docstring：`python -m pydoc -p 8080`
 
 - Linux中查看当前所有的资源限制：`ulimit -a`；设置内核可以同时打开的文件描述符的最大值为2048：`ulimit -n 2048`
@@ -304,3 +306,5 @@ Email阅读：Thunderbird/Gmail
 mRemote（支持多种协议-RDP、SSH、VNC、Telnet、HTTP/HTTPS等，但我用来访问Windows服务器远程桌面）
 
 Xshell（远程访问Linux服务器）
+
+
