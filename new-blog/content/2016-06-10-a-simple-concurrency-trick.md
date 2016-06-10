@@ -1,7 +1,7 @@
 Title: 关于并发的一个小技巧
 Date: 2016-06-10
 Author: youngsterxyf
-Slug: a-simple-currency-trick
+Slug: a-simple-concurrency-trick
 Tags: 总结, 笔记, SQL
 
 前段时间在参与实现一个新业务系统的Demo。该系统集成了多个已有系统的数据，涉及的数据量较大，但由于人力少，时间短，没法专门做一个数据处理子系统，所以只能写了很多数据处理的脚本。
