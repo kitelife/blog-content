@@ -47,9 +47,10 @@ DISPLAY_PAGES_ON_MENU = False
 DISPLAY_CATEGORIES_ON_MENU = False
 MENUITEMS = (
     (u'归 档', '/archives.html'),
+    (u'技术分享', '/pages/tech-share.html'),
+    (u'技术翻译', '/pages/translation.html'),
     (u'工具集', '/pages/tools.html'),
     (u'链 接', '/pages/links.html'),
-    (u'技术分享', '/pages/tech-share.html'),
     (u'关于我', '/pages/aboutme.html'),
     (u'RSS', '/feeds/rss.xml')
 )
