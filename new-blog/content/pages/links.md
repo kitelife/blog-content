@@ -24,5 +24,6 @@ Slug: links
 - [Jerry Qu](https://imququ.com/)
 - [十年踪迹](https://www.h5jun.com/)
 - [罗磊](https://luolei.org/)
+- [我爱计算机](http://www.52cs.org)
 
 
