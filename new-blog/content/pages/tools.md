@@ -123,6 +123,8 @@ Slug: tools
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 - （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
 
+- 按模式批量删除redis数据项：`bin/redis-cli -a 'password' --raw KEYS "cron_task_status__*" | xargs -d '\n' bin/redis-cli -a 'password' DEL`
+
 - 递归查询某目录下的最大文件：`find -type f -exec stat -c "%s %n" {} \; | sort -nr | head -1`
 
 - 查看所有库/模块的docstring：`python -m pydoc -p 8080`
