@@ -2,6 +2,10 @@ Title: 技术分享
 Date: 2014-11-14
 Slug: tech-share
 
+#### 安全指数Go实践总结
+
+[幻灯片](https://pan.baidu.com/s/1qXAHt16)，2017-04-26，百度安全事业部
+
 #### 从云观测到安全指数 - 一点工程实践心得
 
 [幻灯片](https://pan.baidu.com/s/1i4XlHT7)，2017-01-05
