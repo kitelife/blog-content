@@ -3,34 +3,9 @@ Date: 2013-11-02
 Author: youngsterxyf
 Slug: tools
 
-## Sublime Text
-
-### 参考资料：
-
-- [Setting up Sublime Text for Python development](http://dbader.org/blog/setting-up-sublime-text-for-python-development)
-- [Sublime Text 2 Documentation](http://www.sublimetext.com/docs/2/)
-- [SublimeREPL](http://sublimerepl.readthedocs.org/en/latest/), [Github - SublimeREPL](https://github.com/wuub/SublimeREPL)
-- [colorsublime](http://colorsublime.com/)
-- [Package Control](https://sublime.wbond.net/)
-
 ## VIM
 
 配置文件：[https://github.com/youngsterxyf/mydotfiles](https://github.com/youngsterxyf/mydotfiles)
-
-### 快捷键
-
-- 跳到行尾： `shift + a` , 跳到行首： `shift + b`
-- 删除N行： `N + d`，复制N行： `N + yy`
-- 跳到最后一行： `G`，跳到第一行： `gg`
-- 剪切： `dd`，粘贴： `p`
-- vim + ctags:
-    - `Ctrl + ]`自动跳转至定义;
-    - `Ctrl + t`返回上一次查看位置。
-- 块操作:
-    1. `^` → 到行头；
-    2. `<C-v>` → 开始块操作；
-    3. `<C-d>` → 向下移动 (你也可以使用hjkl来移动光标，或是使用%，或是别的)；
-    4. `I-- [ESC]` → I是插入，插入“--”，按ESC键来为每一行生效。
 
 ### 插件
 - [Vundle](https://github.com/gmarik/vundle)(插件管理)
@@ -49,71 +24,6 @@ Slug: tools
 - [vim-css-color](https://github.com/skammer/vim-css-color)(css显示颜色值代表的颜色)
 - [vim-golang](https://github.com/jnwhiteh/vim-golang)(go代码高亮、自动缩进等)
 
-### 资料
-
-[超级牛逼的VIM配置](https://github.com/joedicastro/dotfiles/tree/master/vim)
-
-[spf13-vim - The Ultimate Vim Distribution](http://vim.spf13.com/)
-
-[Learn Vimscript the Hard Way](http://learnvimscriptthehardway.stevelosh.com/)
-
-[Practical Vim: Edit Text at the Speed of Thought](https://github.com/richardlee8681/Rich/blob/master/blog/Linux/Practical%20Vim%20Edit%20Text%20at%20the%20Speed%20of%20Thought.pdf)
-
-[VIM标签页（tab）](http://www.pythonclub.org/linux/vim/tabs)
-
-[Vim的分屏功能](http://coolshell.cn/articles/1679.html)
-
-[100 Vim commands every programmer should know](http://www.catswhocode.com/blog/100-vim-commands-every-programmer-should-know)
-
-## Git
-
-### 书籍：
-* [Pro Git](http://git-scm.com/book/zh/)
-* Git Community Book
-* [Git Internals](https://peepcode.com/products/git-internals-pdf)
-* [Git Reference](http://git-scm.com/docs)
-
-## Latex
-
-- [LaTeX项目主页](http://www.latex-project.org/)
-- [CTEX项目主页](http://www.ctex.org/HomePage)
-- [LaTeX编辑部](http://zzg34b.w3.c361.com/index.htm)
-- [浙江大学理学院数学系-TeX和LaTex论坛](http://www.math.zju.edu.cn/ligangliu/latexforum/)
-- [Tex-StackExchange](http://tex.stackexchange.com/)
-- [LaTeX - WikiBooks](http://en.wikibooks.org/wiki/LaTeX)
-
-### Beamer
-
-- [Beamer theme gallery](http://deic.uab.es/~iblanes/beamer_gallery/)
-- [beamer-theme-matrix](http://www.hartwork.org/beamer-theme-matrix/)
-- [如何准备演讲（beamer版）](http://www.bjt.name/2013/01/beamer-presentation/)
-- [Beamer演示学习笔记](http://zoho.is-programmer.com/user_files/zoho/File/beamerlog-1112.pdf)
-- [A Beamer Quickstart](http://www.math.umbc.edu/~rouben/beamer/)
-- [moderncv的笔记](http://www.xiangsun.org/tex/notes-on-moderncv)
-- [The LaTeX Font Catalogue](http://www.tug.dk/FontCatalogue/)
-
-### 绘图语言与绘图工具
-
-- GnuPlot
-- Asymptote
-- MetaPost
-
-## 开发工具
-
-- VIM / Sublime Text / StackEdit(Markdown文本编辑)
-- InteliJ IDEA（Golang）
-- JetBrains PyCharm（Python）
-- JetBrains PhpStorm <s>Zend Studio</s>（PHP）
-- CodeBlocks（C/C++）
-- Racket（Scheme）
-- Wappalyzer（Chrome、Firefox插件，用于检测网站所使用的技术，非常赞）
-- TeXstudio（Latex）（算开发工具么？）
-- Git/SVN（源码控制），SourceTree（free Git & Mercurial client for Windows or Mac），[ungit](https://github.com/FredrikNoren/ungit)
-- jshint（JavaScript代码检查命令行工具）
-- virtualenv（Python虚拟环境）
-- IPython（可在virtualenv虚拟环境中通过pip install ipython安装使用）
-- ack/codequery（代码搜索工具）
-
 ## 命令行工具与解决方案
 
 - [The Linux Alternative Project](http://www.linuxalt.com/)
@@ -122,6 +32,10 @@ Slug: tools
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 - （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
+
+- shell/bash 交集、并集、差集：并：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq`；交：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq -d`；差(file1 - file2)：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) <(sort file2 | uniq) | uniq -u
+
+`
 
 - 按模式批量删除redis数据项：`bin/redis-cli -a 'password' --raw KEYS "cron_task_status__*" | xargs -d '\n' bin/redis-cli -a 'password' DEL`
 
