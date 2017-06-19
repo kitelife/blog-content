@@ -33,9 +33,7 @@ Slug: tools
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 - （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
 
-- shell/bash 交集、并集、差集：并：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq`；交：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq -d`；差(file1 - file2)：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) <(sort file2 | uniq) | uniq -u
-
-`
+- shell/bash 交集、并集、差集：并：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq`；交：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq -d`；差(file1 - file2)：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) <(sort file2 | uniq) | uniq -u`
 
 - 按模式批量删除redis数据项：`bin/redis-cli -a 'password' --raw KEYS "cron_task_status__*" | xargs -d '\n' bin/redis-cli -a 'password' DEL`
 
