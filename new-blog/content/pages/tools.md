@@ -3,27 +3,6 @@ Date: 2013-11-02
 Author: youngsterxyf
 Slug: tools
 
-## VIM
-
-配置文件：[https://github.com/youngsterxyf/mydotfiles](https://github.com/youngsterxyf/mydotfiles)
-
-### 插件
-- [Vundle](https://github.com/gmarik/vundle)(插件管理)
-- [vim-javascript](https://github.com/vim-scripts/vim-javascript)(JavaScript语法高亮与自动缩进)
-- [The-NERD-Tree](https://github.com/vim-scripts/The-NERD-tree)(文件系统树状浏览窗口)
-- [vim-markdown](https://github.com/plasticboy/vim-markdown)(Markdown格式高亮)
-- [awk.vim](https://github.com/vim-scripts/awk.vim)(awk代码自动缩进)
-- [jedi-vim](https://github.com/davidhalter/jedi-vim)(Python代码自动完成，对jedi自动完成库的vim绑定)
-- [pep8](https://github.com/vim-scripts/pep8)(检查Python源码是否符合PEP8风格)
-- [vim-gitgutter](https://github.com/airblade/vim-gitgutter)(A Vim plugin which shows a git diff in the 'gutter' (sign column). It shows whether each line has been added, modified, and where lines have been removed.)
-- [jshint.vim](https://github.com/walm/jshint.vim)(jshint的vim前端插件)
-- [vim-powerline](https://github.com/Lokaltog/vim-powerline)(实现更美观、功能更多的vim状态栏)
-- [molokai](https://github.com/tomasr/molokai)(Molokai Color Scheme for Vim)
-- [vim-monokai-refined](https://github.com/jaromero/vim-monokai-refined)(Port of Monokai Refined for TextMate/Sublime Text)
-- [indentLine](https://github.com/Yggdroot/indentLine)(缩进线)
-- [vim-css-color](https://github.com/skammer/vim-css-color)(css显示颜色值代表的颜色)
-- [vim-golang](https://github.com/jnwhiteh/vim-golang)(go代码高亮、自动缩进等)
-
 ## 命令行工具与解决方案
 
 - [The Linux Alternative Project](http://www.linuxalt.com/)
@@ -159,66 +138,23 @@ zipfile -c release.zip *.py`
 
 - [Gnome/KDE键盘快捷键](http://www.novell.com/coolsolutions/tip/2289.html)
 
-## 日常使用工具
+## VIM
 
-桌面环境：KDE
+配置文件：[https://github.com/youngsterxyf/mydotfiles](https://github.com/youngsterxyf/mydotfiles)
 
-Shell：zsh + [oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh) <s>Bash + [powerline-shell](https://github.com/milkbikis/powerline-shell)</s>
-
-输入法：Fcitx + Google拼音，ibus拼音
-
-翻墙：Goagent + Chrome插件SwitchySharp或Firefox插件AutoProxy
-
-命令行窗口复用：tmux + tmux-powerline
-
-图形化Web浏览器：Google Chrome/Firefox
-
-命令行Web浏览器：lynx
-
-终端：Terminator
-
-截屏：KSnapshot
-
-虚拟机：VirtualBox
-
-屏幕录像：XVidCap
-
-音频播放器：Songbird/深度音乐播放器/Audacious/[cplay](https://github.com/youngsterxyf/cplay)
-
-视频播放器：VLC/MPlayer/SMPlayer/深度影音
-
-翻译：Google Translate/有道词典chrome插件
-
-图片浏览：GPicView/Shotwell
-
-数据统计图命令行绘制工具：GnuPlot
-
-PDF阅读器：Okular(支持EPUB格式)
-
-BT下载器：Transmission
-
-FTP客户端：FileZilla
-
-RSS阅读：Akregator/Google Reader
-
-Email阅读：Thunderbird/Gmail
-
-即时通讯(GTalk/MSN)：Pidgin/KDE IM Contacts/WebQQ
-
-办公套件：WPS office <s>LibreOffice</s>
-
-日程管理：Trello(Chrome插件+Andriod应用)
-
-思维导图：XMind / Docear / www.mindmeister.com / www.wisemapping.com
-
-原型、系统结构图：Lucidchart
-
-数据备份同步：Dropbox(+Andriod应用)(注：[linux下安装使用Dropbox](https://www.dropbox.com/install#linux-install-content))
-
-文档记录与在线编辑：Evernote(+chrome插件Web Clipper+Andriod应用)/Google Drive/Readability(仅可记录阅读，Chrome插件+Andriod应用)
-
-mRemote（支持多种协议-RDP、SSH、VNC、Telnet、HTTP/HTTPS等，但我用来访问Windows服务器远程桌面）
-
-Xshell（远程访问Linux服务器）
-
-
+### 插件
+- [Vundle](https://github.com/gmarik/vundle)(插件管理)
+- [vim-javascript](https://github.com/vim-scripts/vim-javascript)(JavaScript语法高亮与自动缩进)
+- [The-NERD-Tree](https://github.com/vim-scripts/The-NERD-tree)(文件系统树状浏览窗口)
+- [vim-markdown](https://github.com/plasticboy/vim-markdown)(Markdown格式高亮)
+- [awk.vim](https://github.com/vim-scripts/awk.vim)(awk代码自动缩进)
+- [jedi-vim](https://github.com/davidhalter/jedi-vim)(Python代码自动完成，对jedi自动完成库的vim绑定)
+- [pep8](https://github.com/vim-scripts/pep8)(检查Python源码是否符合PEP8风格)
+- [vim-gitgutter](https://github.com/airblade/vim-gitgutter)(A Vim plugin which shows a git diff in the 'gutter' (sign column). It shows whether each line has been added, modified, and where lines have been removed.)
+- [jshint.vim](https://github.com/walm/jshint.vim)(jshint的vim前端插件)
+- [vim-powerline](https://github.com/Lokaltog/vim-powerline)(实现更美观、功能更多的vim状态栏)
+- [molokai](https://github.com/tomasr/molokai)(Molokai Color Scheme for Vim)
+- [vim-monokai-refined](https://github.com/jaromero/vim-monokai-refined)(Port of Monokai Refined for TextMate/Sublime Text)
+- [indentLine](https://github.com/Yggdroot/indentLine)(缩进线)
+- [vim-css-color](https://github.com/skammer/vim-css-color)(css显示颜色值代表的颜色)
+- [vim-golang](https://github.com/jnwhiteh/vim-golang)(go代码高亮、自动缩进等)
