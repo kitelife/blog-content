@@ -1,5 +1,6 @@
 Title: 技术翻译
 Date: 2016-06-26
+Author: youngsterxyf
 Slug: translation
 
 ## 书籍

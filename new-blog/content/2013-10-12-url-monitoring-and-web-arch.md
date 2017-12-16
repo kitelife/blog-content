@@ -2,7 +2,7 @@ Title: 从URL监控问题谈网站Web架构
 Date: 2013-10-12
 Author: youngsterxyf
 Slug: url-monitoring-and-web-arch
-Tag: 监控, 架构, Web, 工作笔记
+Tags: 监控, 架构, Web, 工作笔记
 
 之前工作中实现了一个对站点进行URL监控的功能。原理是：
 

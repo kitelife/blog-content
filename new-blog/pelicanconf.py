@@ -40,7 +40,7 @@ ARTICLE_SAVE_AS = '{date:%Y}/{date:%m}/{date:%d}/{slug}/index.html'
 
 DEFAULT_CATEGORY = u'其他'
 
-PAGE_DIR = 'pages'
+PAGE_PATHS = ['pages']
 PAGE_URL = 'pages/{slug}.html'
 PAGE_SAVE_AS = 'pages/{slug}.html'
 DISPLAY_PAGES_ON_MENU = False
@@ -64,9 +64,14 @@ GOOGLEPLUS_URL = ''
 
 BAIDU_ANALYTICS_ID = '5c5d8c3fe75afeff117777b9236b96ec'
 
-PLUGIN_PATH = 'plugins'
-PLUGINS = ['latex']
+PLUGIN_PATHS = ['plugins', '/Users/xiayf/Codelab/pelican-plugins']
+PLUGINS = ['latex', 'asciidoc_reader']
+
+#
 LATEX = 'article'
+#
+ASCIIDOC_OPTIONS = ['--theme=html5']
+ASCIIDOC_BACKEND = 'html5'
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
