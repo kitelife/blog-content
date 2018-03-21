@@ -141,20 +141,3 @@ zipfile -c release.zip *.py`
 ## VIM
 
 配置文件：[https://github.com/youngsterxyf/mydotfiles](https://github.com/youngsterxyf/mydotfiles)
-
-### 插件
-- [Vundle](https://github.com/gmarik/vundle)(插件管理)
-- [vim-javascript](https://github.com/vim-scripts/vim-javascript)(JavaScript语法高亮与自动缩进)
-- [The-NERD-Tree](https://github.com/vim-scripts/The-NERD-tree)(文件系统树状浏览窗口)
-- [vim-markdown](https://github.com/plasticboy/vim-markdown)(Markdown格式高亮)
-- [awk.vim](https://github.com/vim-scripts/awk.vim)(awk代码自动缩进)
-- [jedi-vim](https://github.com/davidhalter/jedi-vim)(Python代码自动完成，对jedi自动完成库的vim绑定)
-- [pep8](https://github.com/vim-scripts/pep8)(检查Python源码是否符合PEP8风格)
-- [vim-gitgutter](https://github.com/airblade/vim-gitgutter)(A Vim plugin which shows a git diff in the 'gutter' (sign column). It shows whether each line has been added, modified, and where lines have been removed.)
-- [jshint.vim](https://github.com/walm/jshint.vim)(jshint的vim前端插件)
-- [vim-powerline](https://github.com/Lokaltog/vim-powerline)(实现更美观、功能更多的vim状态栏)
-- [molokai](https://github.com/tomasr/molokai)(Molokai Color Scheme for Vim)
-- [vim-monokai-refined](https://github.com/jaromero/vim-monokai-refined)(Port of Monokai Refined for TextMate/Sublime Text)
-- [indentLine](https://github.com/Yggdroot/indentLine)(缩进线)
-- [vim-css-color](https://github.com/skammer/vim-css-color)(css显示颜色值代表的颜色)
-- [vim-golang](https://github.com/jnwhiteh/vim-golang)(go代码高亮、自动缩进等)
