@@ -63,12 +63,13 @@ FACEBOOK_URL = ''
 GOOGLEPLUS_URL = ''
 
 BAIDU_ANALYTICS_ID = '5c5d8c3fe75afeff117777b9236b96ec'
-
-PLUGIN_PATHS = ['/Users/xiayongfeng/Code/github/pelican-plugins']
+#
+PLUGIN_PATHS = ['plugins']
 PLUGINS = ['latex', 'asciidoc_reader']
+#
 LATEX = 'article'
+#
 ASCIIDOC_CMD = 'asciidoc'
-
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
