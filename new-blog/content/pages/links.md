@@ -26,5 +26,7 @@ Slug: links
 - [罗磊](https://luolei.org/)
 - [我爱计算机](http://www.52cs.org)
 - [Eric Holscher](http://ericholscher.com/)
+- [有赞技术团队](https://tech.youzan.com/)
+- [江南白衣](http://calvin1978.blogcn.com/)
 
 
