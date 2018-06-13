@@ -1,8 +1,8 @@
-Title: Shell 函数式编程
+Title: 编写漂亮的 shell 代码
 Date: 2018-05-16
 Author: xiayf
-Slug: functional-shell-code
-Tags: 函数式, Bash
+Slug: beautiful-shell-code
+Tags: Bash
 
 使用丑陋的编程语言也能写出漂亮的代码。
 
