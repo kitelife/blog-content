@@ -39,7 +39,7 @@ Gwen Shapira，大腕级的解决方案架构师（SA），如今Cloudera的全�
 你应该知道：
 
 - 失败模式的（部分）分层：[崩溃停止->排除(omission)](http://www.cse.psu.edu/~gcao/teach/513-00/c7.pdf)->[拜占庭容错](http://en.wikipedia.org/wiki/Byzantine_fault_tolerance)。你应该理解：在高层次上可能发生的问题在低层次上肯定可能发生，在低层次上不可能发生的问题在高层次上也肯定不可能发生。
-- 在没有任何共享时钟的情况下如何判断在另一个事件之前是否产生了某事件。这意味着你需要理解[Lamport时钟](http://web.stanford.edu/class/cs240/readings/lamport.pdf)及其一般化的[向量始终](http://en.wikipedia.org/wiki/Vector_clock)，也需要阅读一下[这篇Dynamo论文](http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)。
+- 在没有任何共享时钟的情况下如何判断在另一个事件之前是否产生了某事件。这意味着你需要理解[Lamport时钟](http://web.stanford.edu/class/cs240/readings/lamport.pdf)及其一般化的[向量时钟](http://en.wikipedia.org/wiki/Vector_clock)，也需要阅读一下[这篇Dynamo论文](http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)。
 - 单个失败发生的可能性对于我们实现正确的分布式系统到底会有多大的影响（请阅读下面关于FLP结果的笔记）？
 - 不同的时间模型：同步、部分同步和异步（若我找到好的参考文献会添加链接）
 
@@ -81,3 +81,5 @@ Gwen Shapira，大腕级的解决方案架构师（SA），如今Cloudera的全�
 **Not Google:**
 
 [Dryad](http://research.microsoft.com/en-us/projects/dryad/eurosys07.pdf), [Cassandra](https://www.cs.cornell.edu/projects/ladis2009/papers/lakshman-ladis2009.pdf), [Ceph](http://ceph.com/papers/weil-ceph-osdi06.pdf), [RAMCloud](https://ramcloud.stanford.edu/wiki/display/ramcloud/RAMCloud+Papers), [HyperDex](http://hyperdex.org/papers/), [PNUTS](http://www.mpi-sws.org/~druschel/courses/ds/papers/cooper-pnuts.pdf)
+
+
