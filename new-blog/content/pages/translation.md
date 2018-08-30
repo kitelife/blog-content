@@ -7,7 +7,7 @@ Slug: translation
 
 - Python 编程之美 - 最佳实践指南
 
-![](http://download.broadview.com.cn/ScreenShow/1808ccd3ad0568474227)
+<img src="http://download.broadview.com.cn/ScreenShow/1808ccd3ad0568474227" width="70%" height="70%" />
 
 - 精通 Python 设计模式
 
