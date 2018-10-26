@@ -12,6 +12,12 @@ Slug: tools
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 - （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
 
+- 并行运行：`cat data | parallel -j 10 -L 1 ./run.sh`：`-j 10` - 启动10个进程，`-L 1` - 一个进程处理多少行数据
+
+- 删除1天内未更改过的文件：` find . -mtime +1 -exec rm {} \;`
+
+- 按某列排序输出（比如第2列）：sort -n -k2 file
+
 - bat：better cat，https://github.com/sharkdp/bat
 
 - shell/bash 交集、并集、差集：并：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq`；交：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) | uniq -d`；差(file1 - file2)：`sort -m <(sort file1 | uniq) <(sort file2 | uniq) <(sort file2 | uniq) | uniq -u`
