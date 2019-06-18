@@ -77,7 +77,7 @@ DELETE_OUTPUT_DIRECTORY = True      # 编译之前删除output目录，这样保
 
 MARKDOWN = {
     'extension_configs': {
-        'markdown.extensions.codehilite': {'css_class': 'highlight', 'linenums': True},
+        'markdown.extensions.codehilite': {'css_class': 'highlight', 'noclasses': True, 'pygments_style': 'vs'},
         'markdown.extensions.extra': {},
         'markdown.extensions.meta': {},
     },
