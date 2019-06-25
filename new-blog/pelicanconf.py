@@ -80,6 +80,7 @@ MARKDOWN = {
         'markdown.extensions.codehilite': {'css_class': 'highlight', 'noclasses': True, 'pygments_style': 'vs'},
         'markdown.extensions.extra': {},
         'markdown.extensions.meta': {},
+        'markdown.extensions.footnotes': {},
     },
     'output_format': 'html5',
 }
