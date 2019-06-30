@@ -610,11 +610,117 @@ Flux<String> bridge = Flux.create(sink -> {
 - `DROP` 如果下游还没准备好接收当前事件，则直接丢弃。
 - `BUFFER` （默认策略）如果下游处理不过来，则将所有事件放入缓冲区。（缓冲区大小无限制，所以可能会导致内存溢出`OutOfMemoryError`）
 
-> `Mono` 也有一个 `create` 生成器方法。Mono 的 create 方法传入回调的 `MonoSink` 参数不允许下发多个消息，在第一个消息之后她会丢弃所有的消息。
+> `Mono` 也有一个 `create` 生成器方法。Mono 的 create 方法传入回调的 `MonoSink` 参数不允许下发多个消息，在第一个消息之后它会丢弃所有的消息。
 
 ##### 3.4.3 异步单线程的 `push`
 
+`push` 的功能介于 `generate` 和 `create` 之间，适用于处理来自单个生产者的事件。`push` 也可以是异步的，也可以使用 `create` 支持的超限策略来管理反压，然而，同时（at a time）只能有一个生产线程调用 `next`。
+
+```java
+Flux<String> bridge = Flux.push(sink -> {
+    myEventProcessor.register(
+        new SingleThreadEventListener<String>() { // 1
+            
+            public void onDataChunk(List<String> chunk) {
+                for (String s: chunk) {
+                    sink.next(s); // 2
+                }
+            }
+            
+            public void processComplete() {
+                sink.complete(); // 3
+            }
+            
+            public void processError(Throwable e) {
+                sink.error(e); // 4
+            }
+        }
+    );
+});
+```
+
+1. 桥接到 `SingleThreadEventListener` 的 API。
+2. 在单个监听器线程中使用 `next` 向下游（sink - 接收方）推送事件。
+3. `complete` 事件也是由同一个监听器线程发出的。
+4. `error` 事件也是由同一个监听器线程发出的。
+
+**推/拉 混合模型**
+
+多数 Reactor 算子，比如 `create`，都遵从 **推/拉（push/pull）** 混合模型。这意味着尽管大部分的处理过程都是异步的（暗指“推”的方式），也存在小部分逻辑是 *拉（pull）*方式：数据请求。
+
+消费者从数据源*拉取*数据，意指：数据源在消费者首次请求后才会发出数据，然后只有要数据就会推送给消费者，不过数据量不会超过消费者请求的量。
+
+`push()` 和 `create()` 都可以配置（set up）一个 `onRequest` 事件消费者来管理请求量，并且确保仅当存在已发起的请求，数据才会推送给下游。
+
+```java
+Flux<String> bridge = Flux.create(sink -> {
+    myMessageProcessor.register(
+        new MyMessageListener<String>() {
+            
+            public void onMessage(List<String> messages) {
+                for (String s: messages) {
+                    sink.next(s); // 3
+                }
+            }
+        }
+    );
+    sink.onRequest(n -> {
+        List<String> messages = myMessageProcessor.getHistory(n); // 1
+        for (String s: messages) {
+            sink.next(s); // 2
+        }
+    });    
+});
+```
+
+*译者注：上面这个示例有点问题，实际并不存在这样一个 create 方法，并且 sink.onRequest 实际代表一个无限量（n = Long.MAX_VALUE）的请求。*
+
+1. 在请求发起后，拉取消息。
+2. 如果即刻有消息了，则推送给下游。
+3. 后续异步到达的消息也会推送给下游。
+
 #### 3.5 多线程 和 调度器 （Threading and Schedulers）
+
+Reactor，与 RxJava 类似，可以认为是**并发无关的**，也就是说，Reactor 并不强制使用并发（a concurrency
+ model），而是，让开发者按需决定是否使用并发。然而，Reactor 也提供一些功能方便开启并发。
+ 
+获取到一个 `Flux` 或 `Mono` 处理流，并不意味着它在一个专用（dedicated）的线程（`Thread`） 中运行。相反，多数算子也是运行在前一个算子运行的线程中。除非特意指定，首个（topmost）算子（数据源）就运行在执行 `subscribe()` 方法调用的线程中。如下示例在一个新建线程中运行一个 `Mono` 处理流。
+
+```java
+public static void main(String[] args) {
+    final Mono<String> mono = Mono.just("Hello "); // 1
+    
+    new Thread(() -> mono
+        .map(msg -> msg + "thread ")
+        .subscribe(v -> // 2 
+            System.out.println(v + Thread.currentThread().getName()) // 3
+        )
+    ).join();
+}
+```
+
+1. `Mono<String>` 是在主（`main`）线程中装配的（assembled）。
+2. 然而， 订阅操作发生在 `Thread-0` 线程中。
+3. 因而，`map` 和 `onNext` 的回调（译注：`onNext` 的回调即 subscribe 方法传入的 lambda 表达式）实际上也是在 `Thread-0` 上执行。
+
+上述的代码会输出如下内容：
+
+```
+hello thread Thread-0
+```
+
+Reactor 中，运行模型以及实际的运行过程发生在什么地方由使用什么 `Scheduler` 决定。[`Scheduler`](https://projectreactor.io/docs/core/release/api/reactor/core/scheduler/Scheduler.html) 类似于 `ExecutorService`，负有调度职责，但具备一个专用的抽象，功能更强大，充当一个时钟的角色，可用的实现更多。
+
+[`Schedulers`](https://projectreactor.io/docs/core/release/api/reactor/core/scheduler/Schedulers.html) 类提供了一些静态方法来访问这些运行上下文：
+
+- 当前线程（`Schedulers.immediate()`）。
+- 单个可复用的线程（`Schedulers.single()`）。注意：这个方法会为所有调用方（译注：调用 Schedulers.single()）复用同一个线程，指导 `Scheduler` 销毁（disposed）。如果期望每次调用返回一个专用线程，则应该使用 `Schedulers.newSingle()`。
+- 一个弹性的线程池（`Schedulers.elastic()`）。这个 Scheduler 会按需创建新的工作者线程池（worker pool），并复用空闲的工作者线程池。如果工作者线程池空闲时间太长（默认 60s）则会被销毁。对于 I/O 阻塞工作而言这是一个好选择。`Schedulers.elastic()` 可以简便地为阻塞处理过程提供独立的线程（its own thread），这样阻塞操作就不会占用（tie up）其他资源。详情请参考 [如何包装一个同步阻塞的调用？](https://projectreactor.io/docs/core/release/reference/#faq.wrap-blocking)
+- 固定数量工作者的（译注：我暂时的理解 - 工作者（worker）也是一个线程池）一个池，专门为并行处理工作做过调优（Schedulers.parallel()）。它会创建和 CPU 核心数量相同的工作者。
+
+此外，也可以使用 `Schedulers.fromExecutorService(ExecutorService)` 基于已有的 ExecutorService 创建一个 Scheduler。（也可以基于一个 Executor 来创建，但不建议这么干（译注：因为 Executor 不能销毁释放））
+
+
 
 ##### 3.5.1 `publishOn` 方法
 
