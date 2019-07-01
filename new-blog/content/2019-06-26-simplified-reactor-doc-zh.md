@@ -504,7 +504,7 @@ Cancelling after having received 1
 
 #### 3.4 动态地（programmatically）创建一个序列
 
-##### 3.4.1 同步的 `generate`
+##### 3.4.1 同步的 generate
 
 动态创建一个 `Flux` 最简单的方式是借助 `generate` 方法，该方法接受一个生成器函数。
 
@@ -559,7 +559,7 @@ Flux<String> flux = Flux.generate(
     }, (state) -> System.out.println("state: " + state));
 ```
 
-##### 3.4.2 异步多线程的 `create`
+##### 3.4.2 异步多线程的 create
 
 `create` 是动态创建一个 `Flux` 的更高级的方式，适用于每轮下发多个数据，甚至是从多个线程中下发数据。
 
@@ -612,7 +612,7 @@ Flux<String> bridge = Flux.create(sink -> {
 
 > `Mono` 也有一个 `create` 生成器方法。Mono 的 create 方法传入回调的 `MonoSink` 参数不允许下发多个消息，在第一个消息之后它会丢弃所有的消息。
 
-##### 3.4.3 异步单线程的 `push`
+##### 3.4.3 异步单线程的 push
 
 `push` 的功能介于 `generate` 和 `create` 之间，适用于处理来自单个生产者的事件。`push` 也可以是异步的，也可以使用 `create` 支持的超限策略来管理反压，然而，同时（at a time）只能有一个生产线程调用 `next`。
 
@@ -738,7 +738,7 @@ Reactor，串接算子，就是将很多 `Flux` 和 `Mono` 的实现一个套一
 
 有了上面这些认知，现在我们可以进一步了解 `publishOn` 和 `subscribeOn` 这两个算子：
 
-##### 3.5.1 `publishOn` 方法
+##### 3.5.1 publishOn 方法
 
 `publishOn` 和其他算子的用法一样，用在订阅链的中间环节，接收来自上游的信号，然后向下游重放这些信号，不过下发事件回调（`onEvent`、`onError`、`onComplete`）是在关联 `Scheduler` 的一个工作者上执行的。因此，这个算子会影响后续算子在哪执行（直到订阅链上又串接了另一个 `publishOn`）：
 
@@ -764,7 +764,7 @@ new Thread(() -> flux.subscribe(System.out::println));
 4. 第二个 `map` 运行在上面说的从 <第1步> 选出的线程上
 5. 这个匿名线程是 *订阅* 操作发生的地方。打印语句发生在 `publishOn` 切换的最新执行上下文上
 
-##### 3.5.2 `subscribeOn` 方法
+##### 3.5.2 subscribeOn 方法
 
 `subscribeOn` 在构造反向链时应用于订阅处理过程（译注：所谓构造反向链时，是指调用 subscribe 方法时）。因此，无论你将 `subscribeOn` 放在算子链的何处，**它始终会影响源头下发数据的执行上下文**。然而，这并不会影响 `publishOn` 之后算子调用的行为，它们仍然会切换到 `publishOn` 指定的执行上下文。
 
@@ -793,7 +793,7 @@ new Thread(() -> flux.subscribe(System.out::println)); // 5
 
 ### 4. 高级特性和概念
 
-#### 4.1 使用 `ConnectableFlux` 将消息广播到多个订阅者
+#### 4.1 使用 ConnectableFlux 将消息广播到多个订阅者
 
 *以后有空再翻译*
 
@@ -801,7 +801,7 @@ new Thread(() -> flux.subscribe(System.out::println)); // 5
 
 *以后有空再翻译*
 
-#### 4.3 使用 `ParallelFlux` 并行化处理
+#### 4.3 使用 ParallelFlux 并行化处理
 
 如今多核架构已是下里巴人，相应地，轻松实现并行化工作的工具手段很关键。Reactor 提供了一个特殊类型 - `ParallelFlux` - 帮助实现并行化处理。`ParallelFlux` 提供的算子是为并行化工作优化过的。
 
