@@ -6,7 +6,7 @@ Tags: 翻译, Reactor, Reactive
 
 原文：[Reactor 3 Reference Guide](https://projectreactor.io/docs/core/release/reference/)
 
-### 1. 开始吧
+### 1. 起步
 
 #### 1.1 Reactor 简介
 
