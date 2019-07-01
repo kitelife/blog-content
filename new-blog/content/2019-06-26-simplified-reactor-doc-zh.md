@@ -113,7 +113,7 @@ Reactor 是反应式编程范式的一个实现。反应式编程的定义归纳
 
 > 反应式编程是一个异步编程范式，关注数据流和变化的传播。这意味着通过被采用编程语言可以轻松地表达静态（比如 数组）或动态（比如 事件发射器）数据流。 --- https://en.wikipedia.org/wiki/Reactive_programming
 
-反应式编程方向的首个重要工作是：微软在 .NET 生态体系中创建了反应式扩展（Rx）库，然后 RxJava 在 JVM 上实现了反应式编程。时光飞逝，经 Reative Streams 的大力推进，Java 社区终于出现了反应式编程标准，该规范定义了一组接口以及 JVM 上反应式编程库之间的交互规则。Java 9 标准库已将这组接口集成到 `Flow` 类（译注：https://docs.oracle.com/javase/9/docs/api/java/util/concurrent/Flow.html）中。
+反应式编程方向的首个重要工作是：微软在 .NET 生态体系中创建了反应式扩展（Rx）库，然后 RxJava 在 JVM 上实现了反应式编程。时光飞逝，经 Reative Streams 的大力推进，Java 社区终于出现了反应式编程标准，该规范定义了一组接口以及 JVM 上反应式编程库之间的交互规则。Java 9 标准库已将这组接口集成到 `Flow` 类（译注：见[https://docs.oracle.com/javase/9/docs/api/java/util/concurrent/Flow.html](https://docs.oracle.com/javase/9/docs/api/java/util/concurrent/Flow.html)）中。
 
 反应式编程范式在面向对象语言中通常表现为一个观察者设计模式的扩展。你也可以将主流的反应式流模式（reactive streams pattern）和大家熟知的迭代器设计模式做对比，所有这些库中都存在对标于 `Iterable` - `Iterator` 的概念（译注：比如 发布者-消费者）。主要差别在于：迭代器是基于 pull 方式，反应式流则基于 push 方式。
 
