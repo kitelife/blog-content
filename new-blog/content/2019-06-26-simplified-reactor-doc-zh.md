@@ -4,7 +4,7 @@ Author: xiayf
 Slug: simplified-reactor-doc-zh
 Tags: 翻译, Reactor, Reactive
 
-原文：https://projectreactor.io/docs/core/release/reference/
+原文：[Reactor 3 Reference Guide](https://projectreactor.io/docs/core/release/reference/)
 
 ### 1. 开始吧
 
@@ -720,14 +720,152 @@ Reactor 中，运行模型以及实际的运行过程发生在什么地方由使
 
 此外，也可以使用 `Schedulers.fromExecutorService(ExecutorService)` 基于已有的 ExecutorService 创建一个 Scheduler。（也可以基于一个 Executor 来创建，但不建议这么干（译注：因为 Executor 不能销毁释放））
 
+也可以使用 **newXXX** 这类方法创建各种调度器（scheduler）类型的全新实例。例如，使用 `Schedulers.newElastic(yourScheduleName)` 创建一个名为 `yourScheduleName` 的全新的弹性调度器（elastic scheduler）。
 
+> `elastic` 调度器用于兼容处理不可避免的历史遗留的阻塞性代码，但 `single` 和 `parallel` 调度器不行，因而，如果在 `single` 或 `parallel` 调度器上使用 Reactor 的阻塞性 API（`block()`、`blockFirst()`、`blockLast()`，或者进行 `toIterable()` 或 `toStream()` 迭代），会导致抛出 `IllegalStateException` 异常。
+> 
+> 如果自定义调度器所创建的线程实例实现了 `NonBlocking` 标记性接口（marker interface），那么这个调度器也可以被标记为”仅适用于非阻塞性使用（non blocking only）“。
+
+某些算子默认会从 `Schedulers` 选择一个特定的调度器来使用（通常也支持选择其他的）。例如，调用工厂方法 `Flux.interval(Duration.ofMills(300))` 会生成一个 `Flux<Long>` 实例 - 每 300 ms 输出一个滴答事件。这个方法底层实现默认使用 `Schedulers.parallel()`。如下代码行演示了如何将调度器修改成类似于 `Schedulers.single()` 的调度器新实例：
+
+```java
+Flux.interval(Duration.ofMillis(300), Schedulers.newSingle("test"));
+```
+
+Reactor 提供了两种方式来切换反应式链中的执行上下文（或者说 `调度器`）：`publishOn` 和 `subscribeOn`。两者都是接受一个 `Scheduler` 类型参数并将执行上下文切换到这个调度器。不过，链中 `publishOn` 所处的位置很关键，而 `subscribeOn` 处于哪个位置都无所谓。要理解这个差别的原因，得先理解 [订阅之前实际什么都没有发生](https://projectreactor.io/docs/core/release/reference/#reactive.subscribe)。
+
+Reactor，串接算子，就是将很多 `Flux` 和 `Mono` 的实现一个套一个，逐层封装。一旦订阅，就创建了一个 `Subscriber` 对象链，沿链回溯即可找到第一个发布者。这些实现细节是隐藏在接口背后，开发者可见的是最外层的那个 `Flux`（或 `Mono`）以及 `Subscription`（译注：Reactor 中 Subscription 是一个接口类型，是 `Subscriber` 接口中 `onSubscribe` 方法参数的类型 - `public void onSubscribe(Subscription s)`，用于向生产者请求数据 或者 取消订阅），但这些算子特定的链中消费者是幕后功臣。
+
+有了上面这些认知，现在我们可以进一步了解 `publishOn` 和 `subscribeOn` 这两个算子：
 
 ##### 3.5.1 `publishOn` 方法
 
+`publishOn` 和其他算子的用法一样，用在订阅链的中间环节，接收来自上游的信号，然后向下游重放这些信号，不过下发事件回调（`onEvent`、`onError`、`onComplete`）是在关联 `Scheduler` 的一个工作者上执行的。因此，这个算子会影响后续算子在哪执行（直到订阅链上又串接了另一个 `publishOn`）：
+
+- 将执行上下文切换到 `Scheduler` 选择的一个线程上
+- 根据规范（as per the specification），`onNext` 是按时序依次调用下发事件的，所以是占用一个线程（译注：这句不太理解，onNext happen in sequence, so this uses up a single thread）
+- 除非算子工作在一个特定的 `Scheduler` 上（译注：某些算子的内部实现决定了这一点），`publishOn` 之后的算子都是在同一个线程上执行
+
+```java
+Scheduler s = Schedulers.newParallel("parallel-scheduler", 4); // 1
+
+final Flux<String> flux = Flux
+    .range(1, 2)
+    .map(i -> 10 + i) // 2
+    .publishOn(s) // 3
+    .map(i -> "value " + i); // 4
+
+new Thread(() -> flux.subscribe(System.out::println));
+```
+
+1. 创建一个新的 `Scheduler`，内含 4 个线程
+2. 第一个 `map` 运行在 <第5步> 的匿名线程上
+3. `publishOn` 将整个序列的后续处理切换到从 <第1步> 选出的线程上
+4. 第二个 `map` 运行在上面说的从 <第1步> 选出的线程上
+5. 这个匿名线程是 *订阅* 操作发生的地方。打印语句发生在 `publishOn` 切换的最新执行上下文上
+
 ##### 3.5.2 `subscribeOn` 方法
 
-### 4. 测试
+`subscribeOn` 在构造反向链时应用于订阅处理过程（译注：所谓构造反向链时，是指调用 subscribe 方法时）。因此，无论你将 `subscribeOn` 放在算子链的何处，**它始终会影响源头下发数据的执行上下文**。然而，这并不会影响 `publishOn` 之后算子调用的行为，它们仍然会切换到 `publishOn` 指定的执行上下文。
 
-### 5. 调试 Reactor
+- 从订阅操作发生时整个算子链所在的线程切换到新的线程
+- 从指定 `Scheduler` 中选择一个线程
 
-### 6. 高级特性和概念
+> 只有链中最早的 `subscribeOn` 调用会发生实际作用。
+
+```java
+Scheduler s = Schedulers.newParallel("parallel-scheduler", 4); // 1
+
+final Flux<String> flux = Flux
+    .range(1, 2)
+    .map(i -> 10 + i) // 2
+    .subscribeOn(s) // 3
+    .map(i -> "value " + i); // 4
+
+new Thread(() -> flux.subscribe(System.out::println)); // 5 
+```
+
+1. 创建一个新的 `Scheduler`，内含 4 个线程
+2. 第一个 `map` 运行在这 4 个线程中的某个线程上
+3. ...因为 `subscribeOn` 将整个序列处理链从订阅操作发生时的执行上下文（第5步）切换到了新的上下文
+4. 第二个 `map` 和第一个 `map` 运行在同一个线程上
+5. 这个匿名线程是 *订阅操作* 一开始发生的地方的，但是 `subscribeOn` 即刻将上下文切换到调度器4个线程中的一个上
+
+### 4. 高级特性和概念
+
+#### 4.1 使用 `ConnectableFlux` 将消息广播到多个订阅者
+
+*以后有空再翻译*
+
+#### 4.2 3种分批处理方式
+
+*以后有空再翻译*
+
+#### 4.3 使用 `ParallelFlux` 并行化处理
+
+如今多核架构已是下里巴人，相应地，轻松实现并行化工作的工具手段很关键。Reactor 提供了一个特殊类型 - `ParallelFlux` - 帮助实现并行化处理。`ParallelFlux` 提供的算子是为并行化工作优化过的。
+
+对任意 `Flux` 实例调用 `parallel()`算子就能得到一个 `ParallelFlux` 实例。这个方法本身并不能实现并行化工作，而是将工作负载拆分到多个“轨道”（默认“轨道”数量等于 CPU 核数）[^1]。
+
+为了告知产出的 ParallelFlux 实例每个“轨道”在哪执行（以及如何并行执行“轨道”），则必须使用 `runOn(Scheduler)`。注意：对于并行工作，推荐使用一个专用调度器 - `Schedulers.parallel()`。
+
+对比如下两个示例，第一个示例的代码如下所示：
+
+```java
+Flux.range(1, 10)
+    .parallel(2) // 1
+    .subscribe(i -> System.out.println(Thread.currentThread().getName() + " -> " + i));
+```
+
+1. 这里强制指定了“轨道”数量，而不依赖于 CPU 核数。
+
+第二个示例的代码如下所示：
+
+```java
+Flux.range(1, 10)
+    .parallel(2)
+    .runOn(Schedulers.parallel())
+    .subscribe(i -> System.out.println(Thread.currentThread().getName() + " -> " + i));
+```
+
+第一个示例输出如下内容：
+
+```
+main -> 1
+main -> 2
+main -> 3
+main -> 4
+main -> 5
+main -> 6
+main -> 7
+main -> 8
+main -> 9
+main -> 10
+```
+
+第二个示例正确地在两个线程上实现了并行化，输入如下所示：
+
+```
+parallel-1 -> 1
+parallel-2 -> 2
+parallel-1 -> 3
+parallel-2 -> 4
+parallel-1 -> 5
+parallel-2 -> 6
+parallel-1 -> 7
+parallel-1 -> 9
+parallel-2 -> 8
+parallel-2 -> 10
+```
+
+如果数据序列[^2]已经在并行化处理，而你又想将其转回一个 “常规的” `Flux` 实例，然后串行执行算子链余下的部分，则可以使用 `ParallelFlux` 的 `sequential()` 方法。
+
+注意：如果直接使用一个 `Subscriber` 类型参数而不是 lambda 表达式来调用 `subscribe` 方法，那么内部实现会隐式地调用 `sequential()` 方法。
+
+由此也要注意：`subscribe(Subscriber<T>)` 会合并所有数据“轨道”，而 `subscribe(Consumer<T>)` 是运行所有的数据“轨道”。如果以 lambda 表达式调用 `subscribe` 方法，那么每个 lambda 表达式都会被复制成多个实例（数量等于“轨道”数量）去执行[^3]。
+
+[^1]: 译注：这里的“轨道”其实不太直白。在实现上，`ParallelFlux` 会将最后 `subscribe` 的 onNext 回调按并行度（默认等于 CPU 核数 N）复制成 N 个，那么最终调用 ParallelFlux 的 N 个 Subscriber，从 ParallelFlux 实例到一个 Subscriber 的数据流路径可以理解为一个“轨道”，ParallelFlux 在接收到上游消息后按照 round-robin 方式选择一个 Subscriber 调用其 `onNext` 下发消息，但 `onNext` 是运行在什么线程上，是由 runOn 算子决定的，如果不使用 runOn 算子，那么所有 Subscriber 的 `onNext` 方法调用都是同步运行在主线程上的。
+
+[^2]: 译注：原文中用了多个词来表达相近的意思：sequence（序列）、stream（流）、flow（流），阅读时可以相互替代理解。此外，还有 event（事件）、data（数据）、message（消息），在当前上下文中，可以看成是等价的。
+
+[^3]: 译注：这话写得真蠢。详细解释见脚注 1。
