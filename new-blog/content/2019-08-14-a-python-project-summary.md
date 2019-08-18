@@ -201,3 +201,85 @@ log_level = logging.INFO if conf.is_prod else logging.DEBUG
 logging.basicConfig(format=consts.LOG_FORMAT, level=log_level)
 ```
 
+#### API 规范与异常提示
+
+为了统一前端 API 响应处理，有必要对 API 响应体的结构指定标准。以我个人的习惯，所有从应用代码中返回的响应，HTTP 状态码都应该是 200，具体当前 API 请求成功还是失败，如果失败，失败的原因是什么都应该包含在响应体中，响应体大致的结构为：
+
+```json
+{
+    "code": ...,
+    "msg": "...",
+    "data": ...
+}
+```
+
+code 表示请求处理失败时，data 字段可选，code 表示请求处理成功时，msg 字段可选。
+
+前端配合对响应体进行统一检测和提示：
+
+```javascript
+import { notification } from 'antd';
+
+function defaultHTTPCodeHandler(response) {
+  if (response.status >= 400) {
+    // 注意 clone
+    response.clone().text().then(respBody => {
+      notification.error({message: 'API 异常响应', description: `${response.status}, ${respBody}`, duration: null});
+      console.log(`${response.status}, ${respBody}`);
+    });
+  }
+}
+
+function defaultMsgCodeHandler(response) {
+  if (response.status === 200) {
+    // 注意 clone
+    response.clone().json().then(jsonBody => {
+      // 0、200、10000 都属于成功响应
+      if (jsonBody !== undefined && jsonBody.code !== undefined && jsonBody.code !== 0 && jsonBody.code !== 200 && jsonBody.code != 10000) {
+        notification.error({message: '请求失败', description: `${jsonBody.code}, ${jsonBody.msg}`, duration: null});
+        console.log(`${jsonBody.code}, ${jsonBody.msg}`);
+      }
+    });
+  }
+}
+```
+
+并且统一封装发起请求的逻辑：
+
+```javascript
+export function corsFetch(url, init, httpCodeCallback, msgCodeCallback) {
+  const host = myHost();
+  let urlPrefix = host;
+  // 自带 host，则不额外补充 host 前缀
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    urlPrefix = '';
+  }
+  const httpCodeHandler = httpCodeCallback === undefined ? defaultHTTPCodeHandler : httpCodeCallback;
+  const msgCodeHandler = msgCodeCallback === undefined ? defaultMsgCodeHandler : msgCodeCallback;
+  // 对于线上环境或者测试环境，不跨域
+  if (host === PROD_ENV_HOST || host === TEST_ENV_HOST) {
+    const promise = fetch(urlPrefix + url, init);
+    promise.then((response) => httpCodeHandler(response));
+    promise.then((response) => msgCodeHandler(response));
+    return promise;
+  }
+  // 对于本地测试环境，跨域访问预发环境 API 数据，方便测试
+  let corsInit = {
+    credentials: 'include',
+    mode: 'cors',
+    redirect: 'follow',
+  };
+  if (init !== undefined) {
+    corsInit = { ...corsInit, ...init };
+  }
+  if (urlPrefix !== '') {
+    urlPrefix = TEST_ENV_HOST;
+  }
+  const promise = fetch(urlPrefix + url, corsInit);
+  promise.then((response) => httpCodeHandler(response));
+  promise.then((response) => msgCodeHandler(response));
+  return promise;
+}
+```
+
+其中为了方便本地开发测试，允许本地开发环境跨域访问测试环境（最好不要直接跨越访问生产环境），并且自动区分，corsFetch 调用方无感知。
