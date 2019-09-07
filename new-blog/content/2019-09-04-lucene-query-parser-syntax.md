@@ -2,7 +2,7 @@ Title: Lucene 查询解析器语法
 Date: 2019-09-04
 Author: xiayf
 Slug: lucene-query-parser-syntax
-Tags: 翻译、Lucene、ElasticSearch、Kibana
+Tags: 翻译, Lucene, ElasticSearch, Kibana
 
 原文：[Query Parser Syntax](http://lucene.apache.org/core/8_2_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#package.description)
 
