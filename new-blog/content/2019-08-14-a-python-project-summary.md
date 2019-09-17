@@ -201,7 +201,17 @@ log_level = logging.INFO if conf.is_prod else logging.DEBUG
 logging.basicConfig(format=consts.LOG_FORMAT, level=log_level)
 ```
 
-#### 5、API 规范与异常提示
+#### 5、方便排查问题的日志输出
+
+日志是问题排查的主要信息来源，所以日志记录得好不好，很关键。
+
+```python
+# https://github.com/python/cpython/blob/3.7/Lib/logging/__init__.py#L457
+# 日志时间 - 日志级别 - 代码文件路径 - 行号 - 进程 ID - 线程名称 - 日志内容
+LOG_FORMAT = '%(asctime)-15s - %(levelname)s - %(pathname)s - %(lineno)d - %(process)d - %(threadName)s - %(message)s'
+```
+
+#### 6、API 规范与异常提示
 
 为了统一前端 API 响应处理，有必要对 API 响应体的结构指定标准。以我个人的习惯，所有从应用代码中返回的响应，HTTP 状态码都应该是 200，具体当前 API 请求成功还是失败，如果失败，失败的原因是什么都应该包含在响应体中，响应体大致的结构为：
 
