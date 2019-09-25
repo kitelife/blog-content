@@ -6,13 +6,17 @@ Slug: tools
 ## 命令行工具与解决方案
 
 - [The Linux Alternative Project](http://www.linuxalt.com/)
-
 - [Windows命令行列表](http://technet.microsoft.com/en-us/library/bb490890.aspx)
 
 - （置顶）[命令行乐园](http://www.commandlinefu.com/commands/browse)
 - （置顶）[命令行的艺术](https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md)
 
 - [Bash scripting cheatsheet](https://devhints.io/bash)
+- [Curl cheatsheet](https://devhints.io/curl)
+- [httpie cheatsheet](https://devhints.io/httpie)
+- [shellcheck](https://www.shellcheck.net/)
+
+- 带过滤条件和条数限制的 HBase 扫表：`scan 'ad:indexlib', {LIMIT => 10, FILTER => "SingleColumnValueFilter('meta', 'isOnline', =, 'binary:0')"}`
 
 - 并行运行：`cat data | parallel -j 10 -L 1 ./run.sh`：`-j 10` - 启动10个进程，`-L 1` - 一个进程处理多少行数据
 
