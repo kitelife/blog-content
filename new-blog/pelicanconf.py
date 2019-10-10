@@ -84,3 +84,8 @@ MARKDOWN = {
     },
     'output_format': 'html5',
 }
+
+GITALK_CLIENT_ID = '58fb3102b498bfbcb14f'
+GITALK_CLIENT_SECRET = 'dd9788d7bbd9cbca1e75c9ba4db92f96dbf20180'
+GITALK_REPO = 'youngsterxyf.github.com'
+GITALK_OWNER = 'youngsterxyf'
