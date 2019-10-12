@@ -14,7 +14,7 @@ Kafka 本质上是提供日志数据流。
 
 > A log is perhaps the simplest possible storage abstraction. It is an append-only, totally-ordered sequence of records ordered by time.
 
-日志数据的特点是：只增、不改不删，自带时间戳，数据存储的先后顺序即（大致）是实际发生的时间先后顺序。
+日志数据的特点是：只增不改，自带时间戳，数据存储的先后顺序即（大致）是实际发生的时间先后顺序。
 
 数据库可以基于日志来还原历史操作行为，并最终生成最新状态，主从同步就是这么干的。
 
@@ -67,6 +67,3 @@ Kafka 本质上是提供日志数据流。
 对于实现高吞吐能力，除了分片，Kakfa 还充分利用了攒批处理：生产者可以批量发送，中间人将数据攒批写入磁盘日志文件 等等。
 
 此外，由于涉及大量的磁盘文件和网络之间数据读写，Kafka 还充分利用操作系统内核的零拷贝传输能力。
-
-
-
