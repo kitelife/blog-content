@@ -3,6 +3,7 @@ Date: 2019-10-10
 Author: xiayf
 Slug: reading-photon
 Tags: 论文, 笔记
+Latex:
 
 原文：[Photon: Fault-tolerant and Scalable Joining of Continuous Data Streams](https://static.googleusercontent.com/media/research.google.com/zh-CN//pubs/archive/41318.pdf)
 
@@ -68,7 +69,7 @@ IdRegistry 的角色至关重要，所以将其实现为一个基于 Paxos 协�
 
 Photon 的 Dispatcher 模块并没有以 Kafka 这种消息队列作为输入，而是直接监听文件系统中的日志文件变更，这一点有点奇怪，不是特别理解。
 
-Joiner 负责实际的 join 工作，由于 3、4 都比较耗时，所以为了尽可能减少 Joiner 的工作量，Dispatcher 将点击事件日志发送给 Joiner，会先到 IdRegistry 中查一下该事件是否已被处理过，从而起到过滤作用。因多数据中心部署，实际过滤比为 $ \frac{N-1}{N} $。
+Joiner 负责实际的 join 工作，由于 3、4 都比较耗时，所以为了尽可能减少 Joiner 的工作量，Dispatcher 将点击事件日志发送给 Joiner，会先到 IdRegistry 中查一下该事件是否已被处理过，从而起到过滤作用。因多数据中心部署，实际过滤比为：$ \frac{N-1}{N} $。
 
 为了确保 Joiner 高可用，Joiner 是无状态的，向 Dispatcher 提供 RPC 接口，Joiner 内部有限流，以保证不会因为单个 Joiner 负载过大，导致处理时延增大。Dispatcher 调用 Joiner 失败后会重试，重试使用的是指数退避算法。但处理失败的点击事件，是另外存储在 GFS 上，应该是由另外的线程来负责重试，不会影响正常的事件处理。
 
