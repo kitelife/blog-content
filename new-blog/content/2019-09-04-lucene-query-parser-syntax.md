@@ -1,4 +1,4 @@
-Title: Lucene 查询解析器语法
+Title: Lucene 查询解析器语法（译）
 Date: 2019-09-04
 Author: xiayf
 Slug: lucene-query-parser-syntax
