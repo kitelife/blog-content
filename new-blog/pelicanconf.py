@@ -65,7 +65,9 @@ GOOGLEPLUS_URL = ''
 BAIDU_ANALYTICS_ID = '5c5d8c3fe75afeff117777b9236b96ec'
 #
 PLUGIN_PATHS = ['plugins']
-PLUGINS = ['latex', 'asciidoc_reader']
+# plantuml beta, support mindmap: https://github.com/plantuml/plantuml/issues/43
+# plantuml plugin: https://github.com/getpelican/pelican-plugins/tree/master/plantuml
+PLUGINS = ['latex', 'asciidoc_reader', 'plantuml']
 #
 LATEX = 'article'
 #
