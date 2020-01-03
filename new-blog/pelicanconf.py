@@ -52,7 +52,7 @@ MENUITEMS = (
     (u'工具集', '/pages/tools.html'),
     (u'链 接', '/pages/links.html'),
     (u'关于我', '/pages/aboutme.html'),
-    (u'2020', '/pages/2020/html'),
+    (u'2020', '/pages/2020.html'),
     (u'RSS', '/feeds/rss.xml')
 )
 
