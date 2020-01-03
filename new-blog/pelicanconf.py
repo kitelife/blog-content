@@ -52,6 +52,7 @@ MENUITEMS = (
     (u'工具集', '/pages/tools.html'),
     (u'链 接', '/pages/links.html'),
     (u'关于我', '/pages/aboutme.html'),
+    (u'2020', '/pages/2020/html'),
     (u'RSS', '/feeds/rss.xml')
 )
 
@@ -65,7 +66,6 @@ GOOGLEPLUS_URL = ''
 BAIDU_ANALYTICS_ID = '5c5d8c3fe75afeff117777b9236b96ec'
 #
 PLUGIN_PATHS = ['plugins']
-# plantuml beta, support mindmap: https://github.com/plantuml/plantuml/issues/43
 # plantuml plugin: https://github.com/getpelican/pelican-plugins/tree/master/plantuml
 PLUGINS = ['latex', 'asciidoc_reader', 'plantuml']
 #
