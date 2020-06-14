@@ -8,7 +8,7 @@ Tags: 笔记, 故障
 
 为方便读者快速理解故障，先给出系统大致的架构图：
 
-![gxt-tech-arch](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/gxt-tech-arch.png)
+![gxt-tech-arch](https://i.loli.net/2020/06/14/2ZBQgfPqMUnhVzY.png)
 
 其中，
 
@@ -21,13 +21,13 @@ Tags: 笔记, 故障
 
 1.大量请求响应为502，但每次故障发生时，错误响应一般集中在一台Web服务器，如下图所示：
 
-![nginx-502-error](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/nginx-502-error.png)
+![nginx-502-error](https://i.loli.net/2020/06/14/cPmFMn8gKZdzVoB.png)
 
-![nginx-502-count](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/nginx-server-502-count.jpg)
+![nginx-server-502-count](https://i.loli.net/2020/06/14/CSRj4ILYVlU21Es.jpg)
 
 2.（一台或多台）MySQL数据库服务器CPU使用率飙升（但并非总是一起表现故障），如下图所示：
 
-![mysql-slave-server-idle](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/mysql-slave-server-idle.png)
+![mysql-slave-server-idle](https://i.loli.net/2020/06/14/H5gqL8BeQpKXOla.png)
 
 ------
 
@@ -41,7 +41,7 @@ Tags: 笔记, 故障
 
 3.继而，对出现故障现象的MySQL服务器上的数据库执行命令`SHOW PROCESSLIST`（查看当前MySQL实例运行着哪些线程），结果如下所示（截图只是一部分结果）：
 
-![mysql-show-processlist](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/mysql-show-processlist.png)
+![mysql-show-processlist](https://i.loli.net/2020/06/14/jLbvVOZEKlCdkgI.png)
 
 ------
 

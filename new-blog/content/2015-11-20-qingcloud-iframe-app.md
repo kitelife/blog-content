@@ -8,13 +8,13 @@ Tags: 笔记, 工作, 总结
 
 先上图，看看集成的效果：
 
-![ygc-in-qingcloud](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/ygc-in-qingcloud.png)
+![ygc-in-qingcloud](https://i.loli.net/2020/06/14/qA1UVlSXrx2iJHo.png)
 
 ------
 
 对于青云来说，一个iframe应用就是一个URL，由应用开发者提供这个URL，当青云用户访问应用所在的页面时，页面先自动向应用服务器的URL发送数据请求，请求会携带认证信息，应用服务端需要先校验请求确实来自青云，并获取请求中的用户信息，最终响应一个HTML页面内容，青云应用页面收到响应数据后将其置于一个iframe标签中，之后青云用户在iframe页面中的操作都是直接与应用服务器交互。
 
-![qingcloud-iframe-interaction](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/qingcloud-iframe-interaction.png)
+![qingcloud-iframe-interaction](https://i.loli.net/2020/06/14/r4AVfQZnlw3YH1C.png)
 
 上图交互流程的第**2**步中，青云服务器向用户响应的内容最终会生成一个包含以下内容的页面：
 

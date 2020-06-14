@@ -171,7 +171,7 @@ Map会为我们处理在序列上的迭代，应用函数，最后将结果存�
 
 这为什么重要呢？因为利用恰当的库，map让并行处理成为小事一桩！
 
-![map-function](/assets/uploads/pics/map-function.png)
+![map-function](https://i.loli.net/2020/06/14/kqumnip3B7M2dcQ.png)
 
 Python标准库中*multiprocessing*模块，以及极少人知但同样出色的子模块*multiprocessing.dummy*，提供了map函数的并行版本。
 

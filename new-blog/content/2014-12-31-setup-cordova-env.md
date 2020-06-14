@@ -87,7 +87,7 @@ Phonegap官网提供的文档与Apache Cordova文档是相同的，所以从技�
 
 模拟器启动后如下图所示：
 
-![cordova-demo](/assets/uploads/pics/cordova_demo.png)
+![cordova_demo](https://i.loli.net/2020/06/14/kDfRcbjigUHvQZY.png)
 
 ------
 

@@ -6,7 +6,7 @@ Tags: 笔记, 故障
 
 上周五早上9点多，我还在上班的路上，接到技术leader的电话：线上突然出故障了；接着发来一张故障信息页面截图：
 
-![system-fault-err-page](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/system-fault-err-page.png)
+![system-fault-err-page](https://i.loli.net/2020/06/14/L4fVgPGAb3Whznr.png)
 
 截图包含的信息是：数据库中没找到数据表`Users`。
 
@@ -59,7 +59,7 @@ Tags: 笔记, 故障
 
 那么数据库服务、数据库代理服务是如何部署的呢？前一篇文章给出了一张系统架构图，其中数据库代理服务和数据库服务我们运维的同学实际上是这样部署的：
 
-![db-proxy-deployment](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/db-proxy-deployment.png)
+![db-proxy-deployment](https://i.loli.net/2020/06/14/H1MhZn6Nj52moiR.png)
 
 这样的部署徒增别人的迷惑，增大故障排除的难度，而且主MySQL与数据库代理服务之间会存在资源竞争，特别是在数据量访问量大的时候。
 

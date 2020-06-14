@@ -352,11 +352,11 @@ Reactor 引入 2 个可组合的反应式类型（实现了 `Publisher` 接口�
 
 #### 3.1 Flux - 0-N 个值的异步序列
 
-![](media/15617160831865.jpg)
+![](https://i.loli.net/2020/06/14/oKMX4rTvUViZRHj.jpg)
 
 #### 3.2 Mono - 包含 0 或 1 个值的异步结果
 
-![](media/15617161823523.jpg)
+![](https://i.loli.net/2020/06/14/8WxGgH9UkcQwuX4.jpg)
 
 #### 3.3 创建一个 Flux 或 Mono 并进行订阅的一些简单方法
 

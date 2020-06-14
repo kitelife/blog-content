@@ -6,7 +6,7 @@ Tags: 笔记, SQL
 
 前段时间在参与实现一个新业务系统的Demo。该系统集成了多个已有系统的数据，涉及的数据量较大，但由于人力少，时间短，没法专门做一个数据处理子系统，所以只能写了很多数据处理的脚本。
 
-![](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/a-simple-concurrency-trick.png)
+![a-simple-concurrency-trick](https://i.loli.net/2020/06/14/9Q1r52Cq3ZTOXt6.png)
 
 为了复用一些代码，这些数据处理脚本和业务系统一样都是使用PHP实现。在某些数据上报API写入的数据较快较多时，脚本处理不过来（特别在脚本涉及一些网络请求时），只能搞起并发处理 - 在我们的情况下，最简单的并发方式就是多运行几个脚本实例。
 

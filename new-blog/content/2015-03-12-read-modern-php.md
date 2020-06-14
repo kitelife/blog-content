@@ -4,9 +4,9 @@ Author: youngsterxyf
 Slug: read-modern-php
 Tags: 笔记, PHP
 
-![modern-php](/assets/uploads/pics/modern-php.png)
+![modern-php](https://i.loli.net/2020/06/14/FLWAniqmMGEs8Ja.png)
 
-高清无码大图：[戳这里](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/modern-php.png)
+高清无码大图：[戳这里](https://i.loli.net/2020/06/14/FLWAniqmMGEs8Ja.png)
 
 ------
 

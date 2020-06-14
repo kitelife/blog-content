@@ -8,7 +8,7 @@ Tags: github, 笔记, git, 开源
 
 我以 [beego](https://github.com/astaxie/beego) 为例，将pull request的整体使用流程绘图如下：
 
-![fork-pull-request](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/fork-pull-request.jpeg)
+![fork-pull-request](https://i.loli.net/2020/06/14/yFkLXVAHKxmwjq9.jpg)
 
 beego代码库有两个长期分支 `master` 和 `develop`，`master`为稳定分支，`develop`为开发分支，所有PR都要求提交到 `develop` 分支。
 

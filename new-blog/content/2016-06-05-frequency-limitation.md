@@ -44,7 +44,7 @@ $cache->increment($key, 1);
 
 先来看看一张架构图：
 
-![](https://raw.githubusercontent.com/youngsterxyf/youngsterxyf.github.com/master/assets/uploads/pics/api-request-limitation.png)
+![api-request-limitation](https://i.loli.net/2020/06/14/KgHvYRDF7smy61h.png)
 
 一眼就能看出图中“服务器C”的特别之处。
 
