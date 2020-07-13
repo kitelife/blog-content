@@ -37,7 +37,7 @@ make html
 
 (1) 下载 fontmin-app：https://github.com/ecomfe/fontmin-app
 
-(2) 导入字体 SentyZHAO（汉仪新蒂赵孟頫体）：https://github.com/youngsterxyf/blog-content/blob/master/new-blog/SentyZHAO-20180827.ttf
+(2) 导入字体 SentyZHAO（汉仪新蒂赵孟頫体）：https://github.com/youngsterxyf/blog-content/blob/master/new-blog/SentyZHAO.ttf
 
 ![fontmin](https://i.loli.net/2020/06/14/Xn8b9kZDIfWoLmp.png)
 

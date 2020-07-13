@@ -15,6 +15,8 @@ Slug: tools
 - [httpie cheatsheet](https://devhints.io/httpie)
 - [shellcheck](https://www.shellcheck.net/)
 
+- 使用 pv 和 nc 传输文件并显示进度条：`pv [文件路径] | nc [服务端 ip] [服务端 nc 端口]` 
+
 - 带过滤条件和条数限制的 HBase 扫表：`scan 'ad:indexlib', {LIMIT => 10, FILTER => "SingleColumnValueFilter('meta', 'isOnline', =, 'binary:0')"}`
 
 - 并行运行：`cat data | parallel -j 10 -L 1 ./run.sh`：`-j 10` - 启动10个进程，`-L 1` - 一个进程处理多少行数据
