@@ -87,9 +87,9 @@ private int applyWaitMethod(final SequenceBarrier barrier, int counter) throws A
 
 [LockSupport.parkNanos](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/LockSupport.html#parkNanos-long-) 方法的作用简单而言即让当前线程睡眠 sleepTimeNs 纳秒。
 
-Disruptor 作为一个任务队列，自带一个线程池，线程池的线程工厂即构造方法传入的 factory，线程数量等于 [disruptor.handleEventsWith](https://github.com/LMAX-Exchange/disruptor/blob/master/src/main/java/com/lmax/disruptor/dsl/Disruptor.java#L165)调用时传入的回调方法数量，handleEventsWith 的参数数量是不定的（`public final EventHandlerGroup<T> handleEventsWith(final EventHandler<? super T>... handlers)`）。
+Disruptor 作为一个任务队列，自带一个线程池，线程池的线程工厂即构造方法传入的 factory，线程数量等于 [disruptor.handleEventsWith](https://github.com/LMAX-Exchange/disruptor/blob/master/src/main/java/com/lmax/disruptor/dsl/Disruptor.java#L165) 调用时传入的回调方法数量，handleEventsWith 的参数数量不定（`public final EventHandlerGroup<T> handleEventsWith(final EventHandler<? super T>... handlers)`）。
 
-18个 Disruptor 实例，每个实例有一个消费者线程，消费者线程不断检查队列中是否有新的 `Event<T>` 任务需要处理，如果有，则调用 EventHandler 会调用方法进行处理，否则睡眠 sleepTimeNs 纳秒。
+18个 Disruptor 实例，每个实例有一个消费者线程，消费者线程不断检查队列中是否有新的 `Event<T>` 任务需要处理，如果有，则调用 EventHandler 回调方法进行处理，否则睡眠 sleepTimeNs 纳秒。
 
 到此，结合监控指标，可以大致猜测：由于 sleepTimeNs 较小，导致多个线程的状态不断在 `运行`、`睡眠`、`等待调度` 之间切换，线程上下文切换非常频繁。
 
@@ -129,7 +129,7 @@ public class Test {
 1. 使用更大的值来替换 sleepTimeNs 默认值：`new Disruptor<>(Event<T>::new, bufferSize, factory, ProducerType.MULTI, new SleepingWaitStrategy(200, 1000 * 1000 / 10)); // 0.1 ms`
 2. 使用其他等待策略（WaitStrategy），比如：`com.lmax.disruptor.BlockingWaitStrategy`
 
-不过解决方案也是有微小的负作用 - 部分新任务/`Event<T>`实例的处理时延会增大，但在我们的数据流处理场景下，这点时延增大对业务完全没有影响。
+不过解决方案也有微小的负作用 - 部分新任务/`Event<T>`实例的处理时延会增大，但在我们的数据流处理场景下，这点时延增大对业务完全没有影响。
 
 不过，这个问题应该是一直存在，为什么近期才收到告警，为什么以前从监控上未发现？
 
