@@ -1,0 +1,3316 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="1270" onload="init(evt)" viewBox="0 0 1200 1270" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+	}
+
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+		}
+		else if (e.target.id == "unzoom") unzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+	}, false)
+
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+		return;
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+		search();
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) {
+				currentSearchTerm = term;
+				search();
+			}
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (currentSearchTerm === null) return;
+		var term = currentSearchTerm;
+
+		var re = new RegExp(term, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="1270.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="1253" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="1253" > </text>
+<g id="frames">
+<g >
+<title>org/apache/kafka/common/metrics/stats/Rate$SampledTotal:::update (1 samples, 0.09%)</title><rect x="1156.0" y="853" width="1.1" height="15.0" fill="rgb(97,243,97)" rx="2" ry="2" />
+<text  x="1159.04" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IRScope::IRScope (1 samples, 0.09%)</title><rect x="124.6" y="997" width="1.1" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="127.60" y="1007.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/ConcurrentHashMap:::values (1 samples, 0.09%)</title><rect x="1181.5" y="1029" width="1.1" height="15.0" fill="rgb(105,250,105)" rx="2" ry="2" />
+<text  x="1184.51" y="1039.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/RequestFuture:::complete (1 samples, 0.09%)</title><rect x="1162.4" y="917" width="1.1" height="15.0" fill="rgb(102,248,102)" rx="2" ry="2" />
+<text  x="1165.41" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::append_with_bci (1 samples, 0.09%)</title><rect x="124.6" y="757" width="1.1" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="127.60" y="767.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`cerror_nocancel (9 samples, 0.81%)</title><rect x="867.4" y="917" width="9.6" height="15.0" fill="rgb(238,105,105)" rx="2" ry="2" />
+<text  x="870.41" y="927.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_cond_wait (1 samples, 0.09%)</title><rect x="1182.6" y="933" width="1.0" height="15.0" fill="rgb(231,95,95)" rx="2" ry="2" />
+<text  x="1185.57" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::build_hir (1 samples, 0.09%)</title><rect x="124.6" y="1029" width="1.1" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="127.60" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (7 samples, 0.63%)</title><rect x="116.1" y="1061" width="7.4" height="15.0" fill="rgb(222,222,67)" rx="2" ry="2" />
+<text  x="119.12" y="1071.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/slf4j/Log4jLogger:::isDebugEnabled (1 samples, 0.09%)</title><rect x="1152.9" y="821" width="1.0" height="15.0" fill="rgb(100,246,100)" rx="2" ry="2" />
+<text  x="1155.86" y="831.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="693" width="1.1" height="15.0" fill="rgb(229,93,93)" rx="2" ry="2" />
+<text  x="1181.33" y="703.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;void volatile*, OrderAccess::PlatformOrderedLoad&lt;8ul, (ScopedFenceType)0&gt;, void&gt;::operator() (4 samples, 0.36%)</title><rect x="1029.8" y="885" width="4.2" height="15.0" fill="rgb(199,199,59)" rx="2" ry="2" />
+<text  x="1032.77" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::smear_to_sets (1 samples, 0.09%)</title><rect x="38.7" y="997" width="1.0" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="41.65" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::compute_oop_map (1 samples, 0.09%)</title><rect x="127.8" y="949" width="1.0" height="15.0" fill="rgb(213,213,63)" rx="2" ry="2" />
+<text  x="130.79" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IdealLoopTree::loop_predication (1 samples, 0.09%)</title><rect x="72.6" y="1013" width="1.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="75.61" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SimpleThresholdPolicy::event (1 samples, 0.09%)</title><rect x="1155.0" y="821" width="1.0" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="1157.98" y="831.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CallStaticJavaNode::Opcode (1 samples, 0.09%)</title><rect x="68.4" y="981" width="1.0" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="71.36" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InterfaceSupport::serialize_thread_state_internal (4 samples, 0.36%)</title><rect x="1014.9" y="917" width="4.3" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="1017.91" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConnectionGraph::is_oop_field (1 samples, 0.09%)</title><rect x="69.4" y="981" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="72.42" y="991.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/FetchSessionHandler:::handleResponse (1 samples, 0.09%)</title><rect x="1162.4" y="869" width="1.1" height="15.0" fill="rgb(78,226,78)" rx="2" ry="2" />
+<text  x="1165.41" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::call_generator (1 samples, 0.09%)</title><rect x="116.1" y="981" width="1.1" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="119.12" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectMonitor::NotRunnable (2 samples, 0.18%)</title><rect x="1143.3" y="853" width="2.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="1146.31" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (4 samples, 0.36%)</title><rect x="118.2" y="901" width="4.3" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="121.24" y="911.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/metrics/stats/SampledStat:::record (1 samples, 0.09%)</title><rect x="1156.0" y="869" width="1.1" height="15.0" fill="rgb(51,201,51)" rx="2" ry="2" />
+<text  x="1159.04" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::save_old_state (2 samples, 0.18%)</title><rect x="474.8" y="901" width="2.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="477.78" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::threadObj (2 samples, 0.18%)</title><rect x="594.7" y="917" width="2.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="597.69" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Dict::Insert (1 samples, 0.09%)</title><rect x="120.4" y="677" width="1.0" height="15.0" fill="rgb(183,183,52)" rx="2" ry="2" />
+<text  x="123.36" y="687.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="613" width="1.1" height="15.0" fill="rgb(176,176,50)" rx="2" ry="2" />
+<text  x="121.24" y="623.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::block_if_requested_local_poll (31 samples, 2.79%)</title><rect x="982.0" y="917" width="32.9" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="985.01" y="927.5" >li..</text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/Fetcher$1:::onSuccess (1 samples, 0.09%)</title><rect x="1152.9" y="869" width="1.0" height="15.0" fill="rgb(62,211,62)" rx="2" ry="2" />
+<text  x="1155.86" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SpinPause (1 samples, 0.09%)</title><rect x="1146.5" y="885" width="1.1" height="15.0" fill="rgb(244,114,114)" rx="2" ry="2" />
+<text  x="1149.49" y="895.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/ScheduledThreadPoolExecutor$ScheduledFutureTask:::run (3 samples, 0.27%)</title><rect x="1175.1" y="997" width="3.2" height="15.0" fill="rgb(91,238,91)" rx="2" ry="2" />
+<text  x="1178.14" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="853" width="1.1" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="116.99" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InterfaceSupport::serialize_thread_state_internal (6 samples, 0.54%)</title><rect x="957.6" y="917" width="6.4" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="960.61" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Matcher::match_tree (2 samples, 0.18%)</title><rect x="16.4" y="1013" width="2.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="19.37" y="1023.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="661" width="1.1" height="15.0" fill="rgb(248,120,120)" rx="2" ry="2" />
+<text  x="1167.53" y="671.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEvent&lt;EventThreadPark&gt;::should_commit (3 samples, 0.27%)</title><rect x="611.7" y="933" width="3.2" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="614.67" y="943.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/Fetcher$1:::onSuccess (1 samples, 0.09%)</title><rect x="1162.4" y="885" width="1.1" height="15.0" fill="rgb(87,234,87)" rx="2" ry="2" />
+<text  x="1165.41" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compiler::compile_method (5 samples, 0.45%)</title><rect x="124.6" y="1093" width="5.3" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="127.60" y="1103.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::poll_bit (1 samples, 0.09%)</title><rect x="1028.7" y="901" width="1.1" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="1031.71" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciInstanceKlass::super (1 samples, 0.09%)</title><rect x="69.4" y="917" width="1.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="72.42" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhiNode::Identity (1 samples, 0.09%)</title><rect x="119.3" y="677" width="1.1" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="122.30" y="687.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="773" width="1.1" height="15.0" fill="rgb(210,65,65)" rx="2" ry="2" />
+<text  x="1181.33" y="783.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::IUnlock (3 samples, 0.27%)</title><rect x="678.5" y="917" width="3.2" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="681.53" y="927.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter$FormatSpecifier:::appendJustified (1 samples, 0.09%)</title><rect x="1162.4" y="757" width="1.1" height="15.0" fill="rgb(53,202,53)" rx="2" ry="2" />
+<text  x="1165.41" y="767.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectMonitor::enter (5 samples, 0.45%)</title><rect x="1142.2" y="901" width="5.4" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="1145.25" y="911.5" ></text>
+</g>
+<g >
+<title>java/lang/Thread:::isInterrupted (1 samples, 0.09%)</title><rect x="1184.7" y="997" width="1.1" height="15.0" fill="rgb(53,203,53)" rx="2" ry="2" />
+<text  x="1187.69" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadService::is_thread_monitoring_contention (1 samples, 0.09%)</title><rect x="955.5" y="933" width="1.0" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="958.49" y="943.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="549" width="1.1" height="15.0" fill="rgb(249,122,122)" rx="2" ry="2" />
+<text  x="1181.33" y="559.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`mach_absolute_time (16 samples, 1.44%)</title><rect x="1084.9" y="885" width="17.0" height="15.0" fill="rgb(219,78,78)" rx="2" ry="2" />
+<text  x="1087.95" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::elapsed_counter (51 samples, 4.59%)</title><rect x="1047.8" y="917" width="54.1" height="15.0" fill="rgb(191,191,56)" rx="2" ry="2" />
+<text  x="1050.81" y="927.5" >libjv..</text>
+</g>
+<g >
+<title>java/util/HashMap:::putVal (1 samples, 0.09%)</title><rect x="1157.1" y="869" width="1.1" height="15.0" fill="rgb(60,209,60)" rx="2" ry="2" />
+<text  x="1160.10" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseLive::compute (5 samples, 0.45%)</title><rect x="62.0" y="1029" width="5.3" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="65.00" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciMethod::get_bcea (1 samples, 0.09%)</title><rect x="70.5" y="997" width="1.0" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="73.49" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStateTransition::trans_and_fence (1 samples, 0.09%)</title><rect x="379.3" y="949" width="1.0" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="382.28" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`int OrderAccess::ordered_load&lt;int, (ScopedFenceType)0&gt; (3 samples, 0.27%)</title><rect x="465.2" y="869" width="3.2" height="15.0" fill="rgb(210,210,62)" rx="2" ry="2" />
+<text  x="468.23" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::do_DFS (1 samples, 0.09%)</title><rect x="18.5" y="1013" width="1.1" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="21.49" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::in (1 samples, 0.09%)</title><rect x="105.5" y="965" width="1.1" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="108.50" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::handle_special_suspend_equivalent_condition (1 samples, 0.09%)</title><rect x="1186.8" y="917" width="1.1" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="1189.82" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIFG::SquareUp (1 samples, 0.09%)</title><rect x="59.9" y="1029" width="1.0" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="62.87" y="1039.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::maybeTriggerWakeup (1 samples, 0.09%)</title><rect x="1163.5" y="933" width="1.0" height="15.0" fill="rgb(74,222,74)" rx="2" ry="2" />
+<text  x="1166.47" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::transform_old (1 samples, 0.09%)</title><rect x="68.4" y="1013" width="1.0" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="71.36" y="1023.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="597" width="1.1" height="15.0" fill="rgb(250,123,123)" rx="2" ry="2" />
+<text  x="1181.33" y="607.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::in (8 samples, 0.72%)</title><rect x="94.9" y="933" width="8.5" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="97.89" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (1 samples, 0.09%)</title><rect x="118.2" y="309" width="1.1" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="121.24" y="319.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="741" width="1.1" height="15.0" fill="rgb(222,83,83)" rx="2" ry="2" />
+<text  x="1181.33" y="751.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="581" width="1.1" height="15.0" fill="rgb(242,111,111)" rx="2" ry="2" />
+<text  x="1181.33" y="591.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (3 samples, 0.27%)</title><rect x="118.2" y="853" width="3.2" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="121.24" y="863.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/core/config/LoggerConfig:::log (1 samples, 0.09%)</title><rect x="1164.5" y="821" width="1.1" height="15.0" fill="rgb(69,217,69)" rx="2" ry="2" />
+<text  x="1167.53" y="831.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/Fetcher$1:::onSuccess (1 samples, 0.09%)</title><rect x="1152.9" y="885" width="1.0" height="15.0" fill="rgb(79,227,79)" rx="2" ry="2" />
+<text  x="1155.86" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhiNode::unique_input (1 samples, 0.09%)</title><rect x="119.3" y="661" width="1.1" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="122.30" y="671.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::ensure_phi (1 samples, 0.09%)</title><rect x="121.4" y="837" width="1.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="124.42" y="847.5" ></text>
+</g>
+<g >
+<title>Interpreter (997 samples, 89.66%)</title><rect x="131.0" y="1045" width="1057.9" height="15.0" fill="rgb(247,119,119)" rx="2" ry="2" />
+<text  x="133.97" y="1055.5" >Interpreter</text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::remove_useless_nodes (1 samples, 0.09%)</title><rect x="123.5" y="1045" width="1.1" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="126.54" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::thread_main_inner (1,112 samples, 100.00%)</title><rect x="10.0" y="1141" width="1180.0" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="13.00" y="1151.5" >libjvm.dylib`JavaThread::thread_main_inner</text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="677" width="1.1" height="15.0" fill="rgb(250,123,123)" rx="2" ry="2" />
+<text  x="1167.53" y="687.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`EventThreadPark::EventThreadPark (1 samples, 0.09%)</title><rect x="349.6" y="949" width="1.0" height="15.0" fill="rgb(210,210,63)" rx="2" ry="2" />
+<text  x="352.57" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (2 samples, 0.18%)</title><rect x="118.2" y="725" width="2.2" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="121.24" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Block_Stack::push (1 samples, 0.09%)</title><rect x="18.5" y="997" width="1.1" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="21.49" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::remove_dead_region (1 samples, 0.09%)</title><rect x="111.9" y="997" width="1.0" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="114.87" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::IUnlock (3 samples, 0.27%)</title><rect x="655.2" y="901" width="3.2" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="658.18" y="911.5" ></text>
+</g>
+<g >
+<title>call_stub (998 samples, 89.75%)</title><rect x="131.0" y="1061" width="1059.0" height="15.0" fill="rgb(237,104,104)" rx="2" ry="2" />
+<text  x="133.97" y="1071.5" >call_stub</text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadsListHandle::ThreadsListHandle (1 samples, 0.09%)</title><rect x="1184.7" y="981" width="1.1" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="1187.69" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::get_spillcopy_wide (1 samples, 0.09%)</title><rect x="29.1" y="997" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="32.10" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::build_ifg_virtual (1 samples, 0.09%)</title><rect x="39.7" y="1029" width="1.1" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="42.71" y="1039.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/core/config/LoggerConfig:::callAppenders (1 samples, 0.09%)</title><rect x="1178.3" y="645" width="1.1" height="15.0" fill="rgb(100,246,100)" rx="2" ry="2" />
+<text  x="1181.33" y="655.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::Size (1 samples, 0.09%)</title><rect x="44.0" y="997" width="1.0" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="46.96" y="1007.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::poll (4 samples, 0.36%)</title><rect x="1184.7" y="1013" width="4.2" height="15.0" fill="rgb(84,231,84)" rx="2" ry="2" />
+<text  x="1187.69" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::thread_from_jni_environment (1 samples, 0.09%)</title><rect x="359.1" y="949" width="1.1" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="362.12" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InterfaceSupport::serialize_thread_state_with_handler (4 samples, 0.36%)</title><rect x="438.7" y="933" width="4.2" height="15.0" fill="rgb(183,183,52)" rx="2" ry="2" />
+<text  x="441.71" y="943.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/ArrayBlockingQueue:::poll (2 samples, 0.18%)</title><rect x="1173.0" y="997" width="2.1" height="15.0" fill="rgb(72,221,72)" rx="2" ry="2" />
+<text  x="1176.02" y="1007.5" ></text>
+</g>
+<g >
+<title>libsystem_c.dylib`gettimeofday (17 samples, 1.53%)</title><rect x="713.5" y="901" width="18.1" height="15.0" fill="rgb(249,122,122)" rx="2" ry="2" />
+<text  x="716.54" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::ensure_phis_everywhere (1 samples, 0.09%)</title><rect x="121.4" y="853" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="124.42" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`in_bytes(int) (1 samples, 0.09%)</title><rect x="471.6" y="917" width="1.1" height="15.0" fill="rgb(251,125,125)" rx="2" ry="2" />
+<text  x="474.60" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (1 samples, 0.09%)</title><rect x="66.2" y="997" width="1.1" height="15.0" fill="rgb(220,220,66)" rx="2" ry="2" />
+<text  x="69.24" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Matcher::match (5 samples, 0.45%)</title><rect x="13.2" y="1045" width="5.3" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="16.18" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::add_req (1 samples, 0.09%)</title><rect x="16.4" y="965" width="1.0" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="19.37" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::set_thread_status (2 samples, 0.18%)</title><rect x="476.9" y="917" width="2.1" height="15.0" fill="rgb(210,210,62)" rx="2" ry="2" />
+<text  x="479.91" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="901" width="1.1" height="15.0" fill="rgb(235,102,102)" rx="2" ry="2" />
+<text  x="1167.53" y="911.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="709" width="1.1" height="15.0" fill="rgb(237,104,104)" rx="2" ry="2" />
+<text  x="1167.53" y="719.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::javaTimeNanos (1 samples, 0.09%)</title><rect x="1179.4" y="949" width="1.0" height="15.0" fill="rgb(205,205,61)" rx="2" ry="2" />
+<text  x="1182.39" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::allocate_registers (1 samples, 0.09%)</title><rect x="126.7" y="997" width="1.1" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="129.73" y="1007.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/network/ByteBufferSend::: (1 samples, 0.09%)</title><rect x="1155.0" y="869" width="1.0" height="15.0" fill="rgb(71,219,71)" rx="2" ry="2" />
+<text  x="1157.98" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="453" width="1.1" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="121.24" y="463.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::split_USE(MachSpillCopyNode::SpillType, Node*, Block*, Node*, unsigned int, unsigned int, bool, bool, GrowableArray (2 samples, 0.18%)</title><rect x="28.0" y="1013" width="2.2" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="31.04" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadInVMfromNative::~ThreadInVMfromNative (2 samples, 0.18%)</title><rect x="953.4" y="933" width="2.1" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="956.36" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::parker (7 samples, 0.63%)</title><rect x="350.6" y="949" width="7.5" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="353.63" y="959.5" ></text>
+</g>
+<g >
+<title>Interpreter (989 samples, 88.94%)</title><rect x="131.0" y="1029" width="1049.4" height="15.0" fill="rgb(249,122,122)" rx="2" ry="2" />
+<text  x="133.97" y="1039.5" >Interpreter</text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::set_thread_status (1 samples, 0.09%)</title><rect x="363.4" y="949" width="1.0" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="366.36" y="959.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="773" width="1.1" height="15.0" fill="rgb(235,102,102)" rx="2" ry="2" />
+<text  x="1167.53" y="783.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl (1 samples, 0.09%)</title><rect x="108.7" y="997" width="1.0" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="111.69" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Type::hashcons (1 samples, 0.09%)</title><rect x="120.4" y="693" width="1.0" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="123.36" y="703.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (1 samples, 0.09%)</title><rect x="118.2" y="389" width="1.1" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="121.24" y="399.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (4 samples, 0.36%)</title><rect x="118.2" y="869" width="4.3" height="15.0" fill="rgb(222,222,67)" rx="2" ry="2" />
+<text  x="121.24" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStatistics::monitor_wait (1 samples, 0.09%)</title><rect x="483.3" y="917" width="1.0" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="486.27" y="927.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/FetchSessionHandler:::partitionsToLogString (1 samples, 0.09%)</title><rect x="1159.2" y="885" width="1.1" height="15.0" fill="rgb(97,243,97)" rx="2" ry="2" />
+<text  x="1162.23" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciEnv::get_klass_by_index_impl (1 samples, 0.09%)</title><rect x="122.5" y="869" width="1.0" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="125.48" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::clear (1 samples, 0.09%)</title><rect x="63.1" y="1013" width="1.0" height="15.0" fill="rgb(177,177,51)" rx="2" ry="2" />
+<text  x="66.06" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Arena::grow (1 samples, 0.09%)</title><rect x="129.9" y="1029" width="1.1" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="132.91" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Arena::contains (2 samples, 0.18%)</title><rect x="13.2" y="1013" width="2.1" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="16.18" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_exits (1 samples, 0.09%)</title><rect x="119.3" y="709" width="1.1" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="122.30" y="719.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::remove_speculative_types (1 samples, 0.09%)</title><rect x="68.4" y="1045" width="1.0" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="71.36" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::BuildOopMaps (2 samples, 0.18%)</title><rect x="10.0" y="1029" width="2.1" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="13.00" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::local_poll_armed (1 samples, 0.09%)</title><rect x="1173.0" y="917" width="1.1" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="1176.02" y="927.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer:::release (1 samples, 0.09%)</title><rect x="1148.6" y="917" width="1.1" height="15.0" fill="rgb(100,246,100)" rx="2" ry="2" />
+<text  x="1151.62" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::ILock (1 samples, 0.09%)</title><rect x="654.1" y="901" width="1.1" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="657.12" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom_no_update (1 samples, 0.09%)</title><rect x="81.1" y="933" width="1.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="84.10" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="805" width="1.1" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="116.99" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::build_loop_early (4 samples, 0.36%)</title><rect x="74.7" y="1029" width="4.3" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="77.73" y="1039.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="949" width="1.1" height="15.0" fill="rgb(209,63,63)" rx="2" ry="2" />
+<text  x="1181.33" y="959.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/NetworkClient:::poll (1 samples, 0.09%)</title><rect x="1178.3" y="997" width="1.1" height="15.0" fill="rgb(101,246,101)" rx="2" ry="2" />
+<text  x="1181.33" y="1007.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="789" width="1.1" height="15.0" fill="rgb(236,102,102)" rx="2" ry="2" />
+<text  x="1178.14" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="325" width="1.1" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="121.24" y="335.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::del_out (1 samples, 0.09%)</title><rect x="22.7" y="997" width="1.1" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="25.73" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::is_alive (1 samples, 0.09%)</title><rect x="478.0" y="901" width="1.0" height="15.0" fill="rgb(224,224,67)" rx="2" ry="2" />
+<text  x="480.97" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStatistics::monitor_wait_end (1 samples, 0.09%)</title><rect x="1041.4" y="933" width="1.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="1044.44" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::find_first_elem (3 samples, 0.27%)</title><rect x="51.4" y="1013" width="3.2" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="54.38" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl (1 samples, 0.09%)</title><rect x="82.2" y="981" width="1.0" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="85.16" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="501" width="1.1" height="15.0" fill="rgb(180,180,51)" rx="2" ry="2" />
+<text  x="121.24" y="511.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`pthread_mutex_lock (6 samples, 0.54%)</title><rect x="943.8" y="917" width="6.4" height="15.0" fill="rgb(203,55,55)" rx="2" ry="2" />
+<text  x="946.81" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::try_inline_full (1 samples, 0.09%)</title><rect x="124.6" y="821" width="1.1" height="15.0" fill="rgb(188,188,54)" rx="2" ry="2" />
+<text  x="127.60" y="831.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal (1 samples, 0.09%)</title><rect x="81.1" y="965" width="1.1" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="84.10" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciInstanceKlass::get_canonical_holder (1 samples, 0.09%)</title><rect x="69.4" y="933" width="1.1" height="15.0" fill="rgb(205,205,61)" rx="2" ry="2" />
+<text  x="72.42" y="943.5" ></text>
+</g>
+<g >
+<title>I2C/C2I (1 samples, 0.09%)</title><rect x="131.0" y="1013" width="1.0" height="15.0" fill="rgb(223,83,83)" rx="2" ry="2" />
+<text  x="133.97" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="277" width="1.1" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="121.24" y="287.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConnectionGraph::add_node_to_connection_graph (1 samples, 0.09%)</title><rect x="69.4" y="1013" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="72.42" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::optimize (1 samples, 0.09%)</title><rect x="109.7" y="1029" width="1.1" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="112.75" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`int OrderAccess::PlatformOrderedLoad&lt;4ul, (ScopedFenceType)0&gt;::operator()&lt;int&gt; (2 samples, 0.18%)</title><rect x="468.4" y="885" width="2.1" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="471.42" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CounterData::is_CounterData (1 samples, 0.09%)</title><rect x="117.2" y="885" width="1.0" height="15.0" fill="rgb(202,202,60)" rx="2" ry="2" />
+<text  x="120.18" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="197" width="1.1" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="121.24" y="207.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="917" width="1.1" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="116.99" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="869" width="1.1" height="15.0" fill="rgb(204,55,55)" rx="2" ry="2" />
+<text  x="1178.14" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="661" width="1.1" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="121.24" y="671.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::elide_copy (6 samples, 0.54%)</title><rect x="45.0" y="1013" width="6.4" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="48.02" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`in_ByteSize(int) (1 samples, 0.09%)</title><rect x="470.5" y="917" width="1.1" height="15.0" fill="rgb(238,106,106)" rx="2" ry="2" />
+<text  x="473.54" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ImplicitNullCheckStub::emit_code (1 samples, 0.09%)</title><rect x="125.7" y="981" width="1.0" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="128.67" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIFG::re_insert (1 samples, 0.09%)</title><rect x="23.8" y="1013" width="1.1" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="26.79" y="1023.5" ></text>
+</g>
+<g >
+<title>java/lang/Integer:::equals (1 samples, 0.09%)</title><rect x="1157.1" y="853" width="1.1" height="15.0" fill="rgb(58,207,58)" rx="2" ry="2" />
+<text  x="1160.10" y="863.5" ></text>
+</g>
+<g >
+<title>reactor/core/scheduler/WorkerTask:::call (3 samples, 0.27%)</title><rect x="1175.1" y="965" width="3.2" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="1178.14" y="975.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`DYLD-STUB$$__gettimeofday (1 samples, 0.09%)</title><rect x="877.0" y="917" width="1.0" height="15.0" fill="rgb(225,86,86)" rx="2" ry="2" />
+<text  x="879.96" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="213" width="1.1" height="15.0" fill="rgb(188,188,55)" rx="2" ry="2" />
+<text  x="121.24" y="223.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciEnv::get_method_by_index_impl (1 samples, 0.09%)</title><rect x="122.5" y="885" width="1.0" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="125.48" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CompileBroker::invoke_compiler_on_method (114 samples, 10.25%)</title><rect x="10.0" y="1109" width="121.0" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="13.00" y="1119.5" >libjvm.dylib`Co..</text>
+</g>
+<g >
+<title>jdk/internal/misc/Unsafe:::park (5 samples, 0.45%)</title><rect x="1167.7" y="981" width="5.3" height="15.0" fill="rgb(50,200,50)" rx="2" ry="2" />
+<text  x="1170.72" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::dom_depth (5 samples, 0.45%)</title><rect x="84.3" y="965" width="5.3" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="87.28" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciTypeFlow::do_flow (1 samples, 0.09%)</title><rect x="116.1" y="917" width="1.1" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="119.12" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::iterate_all_blocks (1 samples, 0.09%)</title><rect x="124.6" y="885" width="1.1" height="15.0" fill="rgb(212,212,63)" rx="2" ry="2" />
+<text  x="127.60" y="895.5" ></text>
+</g>
+<g >
+<title>java/lang/AbstractStringBuilder:::append (1 samples, 0.09%)</title><rect x="1162.4" y="725" width="1.1" height="15.0" fill="rgb(86,233,86)" rx="2" ry="2" />
+<text  x="1165.41" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphKit::null_check_common (1 samples, 0.09%)</title><rect x="118.2" y="133" width="1.1" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="121.24" y="143.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (6 samples, 0.54%)</title><rect x="117.2" y="981" width="6.3" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="120.18" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStatistics::monitor_wait_end (96 samples, 8.63%)</title><rect x="487.5" y="917" width="101.9" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="490.52" y="927.5" >libjvm.dylib..</text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEvent&lt;EventThreadPark&gt;::JfrEvent (14 samples, 1.26%)</title><rect x="596.8" y="933" width="14.9" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="599.82" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LoadNode::Value (1 samples, 0.09%)</title><rect x="71.5" y="1029" width="1.1" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="74.55" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::overlap (2 samples, 0.18%)</title><rect x="36.5" y="997" width="2.2" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="39.53" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InlineTree::ok_to_inline (1 samples, 0.09%)</title><rect x="116.1" y="965" width="1.1" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="119.12" y="975.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="869" width="1.1" height="15.0" fill="rgb(253,128,128)" rx="2" ry="2" />
+<text  x="1167.53" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`thread_native_entry(Thread*) (1,112 samples, 100.00%)</title><rect x="10.0" y="1173" width="1180.0" height="15.0" fill="rgb(226,88,88)" rx="2" ry="2" />
+<text  x="13.00" y="1183.5" >libjvm.dylib`thread_native_entry(Thread*)</text>
+</g>
+<g >
+<title>libjvm.dylib`IdealLoopTree::loop_predication (1 samples, 0.09%)</title><rect x="72.6" y="981" width="1.1" height="15.0" fill="rgb(183,183,52)" rx="2" ry="2" />
+<text  x="75.61" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEvent&lt;EventThreadPark&gt;::should_commit (12 samples, 1.08%)</title><rect x="365.5" y="949" width="12.7" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="368.49" y="959.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::firePendingCompletedRequests (1 samples, 0.09%)</title><rect x="1162.4" y="933" width="1.1" height="15.0" fill="rgb(74,222,74)" rx="2" ry="2" />
+<text  x="1165.41" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::elapsed_counter (1 samples, 0.09%)</title><rect x="1174.1" y="917" width="1.0" height="15.0" fill="rgb(176,176,50)" rx="2" ry="2" />
+<text  x="1177.08" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="821" width="1.1" height="15.0" fill="rgb(238,105,105)" rx="2" ry="2" />
+<text  x="1178.14" y="831.5" ></text>
+</g>
+<g >
+<title>reactor/core/scheduler/WorkerTask:::call (3 samples, 0.27%)</title><rect x="1175.1" y="949" width="3.2" height="15.0" fill="rgb(177,177,51)" rx="2" ry="2" />
+<text  x="1178.14" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConnectionGraph::compute_escape (2 samples, 0.18%)</title><rect x="69.4" y="1029" width="2.1" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="72.42" y="1039.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter$FormatSpecifier:::printInteger (1 samples, 0.09%)</title><rect x="1162.4" y="805" width="1.1" height="15.0" fill="rgb(56,206,56)" rx="2" ry="2" />
+<text  x="1165.41" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (1 samples, 0.09%)</title><rect x="118.2" y="549" width="1.1" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="121.24" y="559.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GrowableArray&lt;ciMetadata*&gt;::GrowableArray (1 samples, 0.09%)</title><rect x="129.9" y="1061" width="1.1" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="132.91" y="1071.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="261" width="1.1" height="15.0" fill="rgb(220,220,66)" rx="2" ry="2" />
+<text  x="121.24" y="271.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter$FormatSpecifier:::conversion (1 samples, 0.09%)</title><rect x="1159.2" y="837" width="1.1" height="15.0" fill="rgb(63,212,63)" rx="2" ry="2" />
+<text  x="1162.23" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::remove_globally_dead_node (1 samples, 0.09%)</title><rect x="112.9" y="981" width="1.1" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="115.93" y="991.5" ></text>
+</g>
+<g >
+<title>java/lang/Thread:::isInterrupted (1 samples, 0.09%)</title><rect x="1185.8" y="981" width="1.0" height="15.0" fill="rgb(53,203,53)" rx="2" ry="2" />
+<text  x="1188.76" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`State::MachNodeGenerator (1 samples, 0.09%)</title><rect x="17.4" y="981" width="1.1" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="20.43" y="991.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`pthread_mutex_trylock (5 samples, 0.45%)</title><rect x="1117.8" y="933" width="5.3" height="15.0" fill="rgb(222,82,82)" rx="2" ry="2" />
+<text  x="1120.84" y="943.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/InFlightRequests:::getNodesWithTimedOutRequests (2 samples, 0.18%)</title><rect x="1149.7" y="901" width="2.1" height="15.0" fill="rgb(102,248,102)" rx="2" ry="2" />
+<text  x="1152.68" y="911.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="853" width="1.1" height="15.0" fill="rgb(213,69,69)" rx="2" ry="2" />
+<text  x="1167.53" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::dom_lca_for_get_late_ctrl (1 samples, 0.09%)</title><rect x="81.1" y="981" width="1.1" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="84.10" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (6 samples, 0.54%)</title><rect x="117.2" y="917" width="6.3" height="15.0" fill="rgb(225,225,68)" rx="2" ry="2" />
+<text  x="120.18" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEventSetting::setting (1 samples, 0.09%)</title><rect x="610.6" y="917" width="1.1" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="613.61" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciTypeFlow::Block::successors (1 samples, 0.09%)</title><rect x="116.1" y="853" width="1.1" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="119.12" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (2 samples, 0.18%)</title><rect x="118.2" y="741" width="2.2" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="121.24" y="751.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="821" width="1.1" height="15.0" fill="rgb(250,123,123)" rx="2" ry="2" />
+<text  x="1181.33" y="831.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Matcher::ReduceInst (2 samples, 0.18%)</title><rect x="16.4" y="997" width="2.1" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="19.37" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="421" width="1.1" height="15.0" fill="rgb(191,191,56)" rx="2" ry="2" />
+<text  x="121.24" y="431.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`java_lang_Thread::set_thread_status (2 samples, 0.18%)</title><rect x="484.3" y="917" width="2.2" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="487.33" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="437" width="1.1" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="121.24" y="447.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/NetworkClient:::poll (1 samples, 0.09%)</title><rect x="1183.6" y="997" width="1.1" height="15.0" fill="rgb(70,218,70)" rx="2" ry="2" />
+<text  x="1186.63" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::Register_Allocate (43 samples, 3.87%)</title><rect x="22.7" y="1045" width="45.7" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="25.73" y="1055.5" >libj..</text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFence&lt;(ScopedFenceType)0&gt;::postfix (1 samples, 0.09%)</title><rect x="1029.8" y="869" width="1.0" height="15.0" fill="rgb(180,180,52)" rx="2" ry="2" />
+<text  x="1032.77" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciTypeFlow::flow_block (1 samples, 0.09%)</title><rect x="116.1" y="869" width="1.1" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="119.12" y="879.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/ingestor/service/DataJoinService:::runOnce (1 samples, 0.09%)</title><rect x="1164.5" y="965" width="1.1" height="15.0" fill="rgb(87,233,87)" rx="2" ry="2" />
+<text  x="1167.53" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`EventThreadPark::EventThreadPark (1 samples, 0.09%)</title><rect x="399.4" y="933" width="1.1" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="402.44" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSetIterator::advance_and_next (1 samples, 0.09%)</title><rect x="34.4" y="997" width="1.1" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="37.41" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom_no_update (1 samples, 0.09%)</title><rect x="105.5" y="981" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="108.50" y="991.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="917" width="1.1" height="15.0" fill="rgb(207,61,61)" rx="2" ry="2" />
+<text  x="1181.33" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="933" width="1.1" height="15.0" fill="rgb(223,84,84)" rx="2" ry="2" />
+<text  x="1181.33" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectValue::write_on (1 samples, 0.09%)</title><rect x="12.1" y="981" width="1.1" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="15.12" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseLive::compute (1 samples, 0.09%)</title><rect x="21.7" y="1013" width="1.0" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="24.67" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::block_if_requested (2 samples, 0.18%)</title><rect x="979.9" y="917" width="2.1" height="15.0" fill="rgb(194,194,56)" rx="2" ry="2" />
+<text  x="982.89" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseLive::freeset (1 samples, 0.09%)</title><rect x="21.7" y="997" width="1.0" height="15.0" fill="rgb(205,205,61)" rx="2" ry="2" />
+<text  x="24.67" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`HandleMarkCleaner::~HandleMarkCleaner (2 samples, 0.18%)</title><rect x="433.4" y="933" width="2.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="436.40" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::unlock (1 samples, 0.09%)</title><rect x="677.5" y="901" width="1.0" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="680.46" y="911.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter$FormatSpecifier:::print (1 samples, 0.09%)</title><rect x="1162.4" y="821" width="1.1" height="15.0" fill="rgb(94,240,94)" rx="2" ry="2" />
+<text  x="1165.41" y="831.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_interrupted (1 samples, 0.09%)</title><rect x="1187.9" y="917" width="1.0" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="1190.88" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectSynchronizer::wait (1 samples, 0.09%)</title><rect x="1180.4" y="997" width="1.1" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="1183.45" y="1007.5" ></text>
+</g>
+<g >
+<title>jdk/internal/misc/Unsafe:::unpark (1 samples, 0.09%)</title><rect x="1148.6" y="885" width="1.1" height="15.0" fill="rgb(96,242,96)" rx="2" ry="2" />
+<text  x="1151.62" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="725" width="1.1" height="15.0" fill="rgb(216,73,73)" rx="2" ry="2" />
+<text  x="1167.53" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFenceGeneral&lt;(ScopedFenceType)0&gt;::postfix (1 samples, 0.09%)</title><rect x="1030.8" y="869" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="1033.83" y="879.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`__psynch_cvwait (27 samples, 2.43%)</title><rect x="838.8" y="917" width="28.6" height="15.0" fill="rgb(215,71,71)" rx="2" ry="2" />
+<text  x="841.76" y="927.5" >li..</text>
+</g>
+<g >
+<title>reactor/util/concurrent/SpscArrayQueue:::offer (1 samples, 0.09%)</title><rect x="1177.3" y="853" width="1.0" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="1180.27" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="565" width="1.1" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="121.24" y="575.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCoalesce::coalesce_driver (4 samples, 0.36%)</title><rect x="54.6" y="1029" width="4.2" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="57.57" y="1039.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="693" width="1.1" height="15.0" fill="rgb(250,123,123)" rx="2" ry="2" />
+<text  x="1167.53" y="703.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciMethodBlocks::clear_processed (1 samples, 0.09%)</title><rect x="70.5" y="933" width="1.0" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="73.49" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_interrupted (1 samples, 0.09%)</title><rect x="1147.6" y="885" width="1.0" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="1150.55" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`thread_entry(JavaThread*, Thread*) (998 samples, 89.75%)</title><rect x="131.0" y="1125" width="1059.0" height="15.0" fill="rgb(220,79,79)" rx="2" ry="2" />
+<text  x="133.97" y="1135.5" >libjvm.dylib`thread_entry(JavaThread*, Thread*)</text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::firePendingCompletedRequests (1 samples, 0.09%)</title><rect x="1152.9" y="917" width="1.0" height="15.0" fill="rgb(69,218,69)" rx="2" ry="2" />
+<text  x="1155.86" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::insert_anti_dependences (1 samples, 0.09%)</title><rect x="20.6" y="997" width="1.1" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="23.61" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::Select (1 samples, 0.09%)</title><rect x="23.8" y="1029" width="1.1" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="26.79" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::local_poll_armed (29 samples, 2.61%)</title><rect x="982.0" y="901" width="30.8" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="985.01" y="911.5" >li..</text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::optimize (1 samples, 0.09%)</title><rect x="68.4" y="1029" width="1.0" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="71.36" y="1039.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter:::format (1 samples, 0.09%)</title><rect x="1159.2" y="869" width="1.1" height="15.0" fill="rgb(88,235,88)" rx="2" ry="2" />
+<text  x="1162.23" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::resolve_collect_mappings (1 samples, 0.09%)</title><rect x="128.8" y="981" width="1.1" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="131.85" y="991.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer:::acquireQueued (3 samples, 0.27%)</title><rect x="1185.8" y="997" width="3.1" height="15.0" fill="rgb(78,226,78)" rx="2" ry="2" />
+<text  x="1188.76" y="1007.5" ></text>
+</g>
+<g >
+<title>java/lang/Object:::wait (1 samples, 0.09%)</title><rect x="1180.4" y="1029" width="1.1" height="15.0" fill="rgb(109,254,109)" rx="2" ry="2" />
+<text  x="1183.45" y="1039.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`mach_absolute_time (8 samples, 0.72%)</title><rect x="722.0" y="869" width="8.5" height="15.0" fill="rgb(251,124,124)" rx="2" ry="2" />
+<text  x="725.03" y="879.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/common/mq/KafkaReader$KafkaPollService:::poll (23 samples, 2.07%)</title><rect x="1140.1" y="981" width="24.4" height="15.0" fill="rgb(95,241,95)" rx="2" ry="2" />
+<text  x="1143.13" y="991.5" >c..</text>
+</g>
+<g >
+<title>org/apache/kafka/common/metrics/stats/Meter:::record (1 samples, 0.09%)</title><rect x="1151.8" y="885" width="1.1" height="15.0" fill="rgb(61,210,61)" rx="2" ry="2" />
+<text  x="1154.80" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::ILock (10 samples, 0.90%)</title><rect x="666.9" y="885" width="10.6" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="669.85" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphKit::replace_in_map (1 samples, 0.09%)</title><rect x="118.2" y="117" width="1.1" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="121.24" y="127.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (1 samples, 0.09%)</title><rect x="118.2" y="645" width="1.1" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="121.24" y="655.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/NetworkClient:::doSend (1 samples, 0.09%)</title><rect x="1155.0" y="885" width="1.0" height="15.0" fill="rgb(63,211,63)" rx="2" ry="2" />
+<text  x="1157.98" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CheckCastPPNode::Identity (1 samples, 0.09%)</title><rect x="68.4" y="997" width="1.0" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="71.36" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`TypeInstPtr::make (1 samples, 0.09%)</title><rect x="118.2" y="53" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="121.24" y="63.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::set_req (1 samples, 0.09%)</title><rect x="22.7" y="1013" width="1.1" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="25.73" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciMethod::get_flow_analysis (1 samples, 0.09%)</title><rect x="116.1" y="933" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="119.12" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::is_misaligned_pair (1 samples, 0.09%)</title><rect x="44.0" y="1013" width="1.0" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="46.96" y="1023.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/FetchSessionHandler:::responseDataToLogString (1 samples, 0.09%)</title><rect x="1162.4" y="853" width="1.1" height="15.0" fill="rgb(74,222,74)" rx="2" ry="2" />
+<text  x="1165.41" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::Output (2 samples, 0.18%)</title><rect x="10.0" y="1045" width="2.1" height="15.0" fill="rgb(220,220,66)" rx="2" ry="2" />
+<text  x="13.00" y="1055.5" ></text>
+</g>
+<g >
+<title>com/lmax/disruptor/SleepingWaitStrategy:::waitFor (943 samples, 84.80%)</title><rect x="139.5" y="981" width="1000.6" height="15.0" fill="rgb(80,227,80)" rx="2" ry="2" />
+<text  x="142.46" y="991.5" >com/lmax/disruptor/SleepingWaitStrategy:::waitFor</text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="885" width="1.1" height="15.0" fill="rgb(205,58,58)" rx="2" ry="2" />
+<text  x="1181.33" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="709" width="1.1" height="15.0" fill="rgb(248,120,120)" rx="2" ry="2" />
+<text  x="1178.14" y="719.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`__commpage_gettimeofday (1 samples, 0.09%)</title><rect x="731.6" y="901" width="1.0" height="15.0" fill="rgb(234,99,99)" rx="2" ry="2" />
+<text  x="734.58" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="517" width="1.1" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="121.24" y="527.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl_no_update (1 samples, 0.09%)</title><rect x="82.2" y="965" width="1.0" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="85.16" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseLive::add_liveout (3 samples, 0.27%)</title><rect x="64.1" y="1013" width="3.2" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="67.12" y="1023.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="837" width="1.1" height="15.0" fill="rgb(201,51,51)" rx="2" ry="2" />
+<text  x="1181.33" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="597" width="1.1" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="121.24" y="607.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OopMap::OopMap (1 samples, 0.09%)</title><rect x="125.7" y="917" width="1.0" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="128.67" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConstantOopWriteValue::write_on (1 samples, 0.09%)</title><rect x="12.1" y="965" width="1.1" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="15.12" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::invoke (1 samples, 0.09%)</title><rect x="124.6" y="933" width="1.1" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="127.60" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadParkedState::JavaThreadParkedState (1 samples, 0.09%)</title><rect x="360.2" y="949" width="1.0" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="363.18" y="959.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="837" width="1.1" height="15.0" fill="rgb(204,56,56)" rx="2" ry="2" />
+<text  x="1167.53" y="847.5" ></text>
+</g>
+<g >
+<title>sun/nio/ch/KQueueSelectorImpl:::doSelect (1 samples, 0.09%)</title><rect x="1157.1" y="885" width="1.1" height="15.0" fill="rgb(68,217,68)" rx="2" ry="2" />
+<text  x="1160.10" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::elapsed_counter (1 samples, 0.09%)</title><rect x="588.3" y="901" width="1.1" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="591.33" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::emit_code_epilog (1 samples, 0.09%)</title><rect x="125.7" y="1013" width="1.0" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="128.67" y="1023.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_start (1,112 samples, 100.00%)</title><rect x="10.0" y="1189" width="1180.0" height="15.0" fill="rgb(241,110,110)" rx="2" ry="2" />
+<text  x="13.00" y="1199.5" >libsystem_pthread.dylib`_pthread_start</text>
+</g>
+<g >
+<title>libjvm.dylib`ciTypeFlow::df_flow_types (1 samples, 0.09%)</title><rect x="116.1" y="885" width="1.1" height="15.0" fill="rgb(210,210,63)" rx="2" ry="2" />
+<text  x="119.12" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::local_poll_armed (1 samples, 0.09%)</title><rect x="951.2" y="933" width="1.1" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="954.24" y="943.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/metrics/Sensor:::record (1 samples, 0.09%)</title><rect x="1156.0" y="901" width="1.1" height="15.0" fill="rgb(80,227,80)" rx="2" ry="2" />
+<text  x="1159.04" y="911.5" ></text>
+</g>
+<g >
+<title>jdk/internal/misc/Unsafe:::park (2 samples, 0.18%)</title><rect x="1173.0" y="965" width="2.1" height="15.0" fill="rgb(67,216,67)" rx="2" ry="2" />
+<text  x="1176.02" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::has_node (1 samples, 0.09%)</title><rect x="72.6" y="933" width="1.1" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="75.61" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;void volatile*, OrderAccess::PlatformOrderedLoad&lt;8ul, (ScopedFenceType)0&gt;, void&gt;::operator() (23 samples, 2.07%)</title><rect x="988.4" y="869" width="24.4" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="991.38" y="879.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_MP (1 samples, 0.09%)</title><rect x="688.1" y="885" width="1.0" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="691.08" y="895.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`__gettimeofday (96 samples, 8.63%)</title><rect x="736.9" y="917" width="101.9" height="15.0" fill="rgb(248,120,120)" rx="2" ry="2" />
+<text  x="739.89" y="927.5" >libsystem_ke..</text>
+</g>
+<g >
+<title>org/apache/kafka/common/network/Selector:::select (1 samples, 0.09%)</title><rect x="1157.1" y="901" width="1.1" height="15.0" fill="rgb(58,208,58)" rx="2" ry="2" />
+<text  x="1160.10" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parker::park (2 samples, 0.18%)</title><rect x="1186.8" y="933" width="2.1" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="1189.82" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Arena::Amalloc (1 samples, 0.09%)</title><rect x="129.9" y="1045" width="1.1" height="15.0" fill="rgb(195,195,57)" rx="2" ry="2" />
+<text  x="132.91" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_interrupted (8 samples, 0.72%)</title><rect x="697.6" y="917" width="8.5" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="700.63" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="837" width="1.1" height="15.0" fill="rgb(229,92,92)" rx="2" ry="2" />
+<text  x="1178.14" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OrderAccess::fence (9 samples, 0.81%)</title><rect x="614.9" y="933" width="9.5" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="617.86" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LIR_Assembler::emit_stubs (1 samples, 0.09%)</title><rect x="125.7" y="997" width="1.0" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="128.67" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="661" width="1.1" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="116.99" y="671.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`BCEscapeAnalyzer::iterate_blocks (1 samples, 0.09%)</title><rect x="70.5" y="949" width="1.0" height="15.0" fill="rgb(177,177,51)" rx="2" ry="2" />
+<text  x="73.49" y="959.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/core/pattern/MessagePatternConverter:::format (1 samples, 0.09%)</title><rect x="1164.5" y="629" width="1.1" height="15.0" fill="rgb(69,218,69)" rx="2" ry="2" />
+<text  x="1167.53" y="639.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PathFrequency::to (1 samples, 0.09%)</title><rect x="72.6" y="949" width="1.1" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="75.61" y="959.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_cond_wait (1 samples, 0.09%)</title><rect x="1116.8" y="933" width="1.0" height="15.0" fill="rgb(203,54,54)" rx="2" ry="2" />
+<text  x="1119.78" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEventSetting::is_enabled (9 samples, 0.81%)</title><rect x="601.1" y="917" width="9.5" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="604.06" y="927.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/AbstractCoordinator:::access$500 (1 samples, 0.09%)</title><rect x="1188.9" y="1045" width="1.1" height="15.0" fill="rgb(54,204,54)" rx="2" ry="2" />
+<text  x="1191.94" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CompileBroker::compiler_thread_loop (114 samples, 10.25%)</title><rect x="10.0" y="1125" width="121.0" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="13.00" y="1135.5" >libjvm.dylib`Co..</text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadParkedState::~JavaThreadParkedState (98 samples, 8.81%)</title><rect x="486.5" y="933" width="103.9" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="489.46" y="943.5" >libjvm.dylib..</text>
+</g>
+<g >
+<title>libjvm.dylib`Unsafe_Park(JNIEnv_*, _jobject*, unsigned char, long) (712 samples, 64.03%)</title><rect x="384.6" y="949" width="755.5" height="15.0" fill="rgb(212,68,68)" rx="2" ry="2" />
+<text  x="387.59" y="959.5" >libjvm.dylib`Unsafe_Park(JNIEnv_*, _jobject*, unsigned char, long)</text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::compute_oop_map (1 samples, 0.09%)</title><rect x="127.8" y="965" width="1.0" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="130.79" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::GraphBuilder (1 samples, 0.09%)</title><rect x="124.6" y="981" width="1.1" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="127.60" y="991.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="789" width="1.1" height="15.0" fill="rgb(218,77,77)" rx="2" ry="2" />
+<text  x="1181.33" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::set_thread_state (1 samples, 0.09%)</title><rect x="358.1" y="949" width="1.0" height="15.0" fill="rgb(188,188,54)" rx="2" ry="2" />
+<text  x="361.06" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::alloc_block_containing (1 samples, 0.09%)</title><rect x="21.7" y="949" width="1.0" height="15.0" fill="rgb(205,205,61)" rx="2" ry="2" />
+<text  x="24.67" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::JavaThreadStatusChanger (2 samples, 0.18%)</title><rect x="474.8" y="917" width="2.1" height="15.0" fill="rgb(205,205,61)" rx="2" ry="2" />
+<text  x="477.78" y="927.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/KafkaConsumer:::poll (20 samples, 1.80%)</title><rect x="1140.1" y="965" width="21.2" height="15.0" fill="rgb(60,209,60)" rx="2" ry="2" />
+<text  x="1143.13" y="975.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/FetchSessionHandler$Builder:::build (1 samples, 0.09%)</title><rect x="1159.2" y="901" width="1.1" height="15.0" fill="rgb(58,207,58)" rx="2" ry="2" />
+<text  x="1162.23" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseAggressiveCoalesce::coalesce (1 samples, 0.09%)</title><rect x="54.6" y="1013" width="1.0" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="57.57" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ChunkPool::allocate (1 samples, 0.09%)</title><rect x="129.9" y="1013" width="1.1" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="132.91" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::iterate_bytecodes_for_block (1 samples, 0.09%)</title><rect x="124.6" y="949" width="1.1" height="15.0" fill="rgb(177,177,51)" rx="2" ry="2" />
+<text  x="127.60" y="959.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/ingestor/core/iterable/KafkaIterable:::afterIteration (1 samples, 0.09%)</title><rect x="1166.7" y="885" width="1.0" height="15.0" fill="rgb(83,230,83)" rx="2" ry="2" />
+<text  x="1169.65" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::thread_from_jni_environment (18 samples, 1.62%)</title><rect x="453.6" y="933" width="19.1" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="456.56" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFence&lt;(ScopedFenceType)0&gt;::postfix (1 samples, 0.09%)</title><rect x="994.7" y="853" width="1.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="997.75" y="863.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="725" width="1.1" height="15.0" fill="rgb(221,81,81)" rx="2" ry="2" />
+<text  x="1178.14" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`MachCallJavaNode::in_RegMask (1 samples, 0.09%)</title><rect x="50.3" y="997" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="53.32" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`find_lowest_bit(unsigned int) (2 samples, 0.18%)</title><rect x="52.4" y="997" width="2.2" height="15.0" fill="rgb(239,107,107)" rx="2" ry="2" />
+<text  x="55.45" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom (13 samples, 1.17%)</title><rect x="89.6" y="965" width="13.8" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="92.59" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectMonitor::EnterI (2 samples, 0.18%)</title><rect x="1143.3" y="885" width="2.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="1146.31" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`EnableIf&lt;!(AccessInternal::MustConvertCompressedOop&lt;1097844ull, oopDesc*&gt;::value), oopDesc*&gt;::type RawAccessBarrier&lt;1097844ull&gt;::decode_internal&lt;1097844ull, oopDesc*&gt; (1 samples, 0.09%)</title><rect x="1148.6" y="837" width="1.1" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="1151.62" y="847.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1166.7" y="917" width="1.0" height="15.0" fill="rgb(222,83,83)" rx="2" ry="2" />
+<text  x="1169.65" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::emit_lir (3 samples, 0.27%)</title><rect x="126.7" y="1029" width="3.2" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="129.73" y="1039.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="901" width="1.1" height="15.0" fill="rgb(237,104,104)" rx="2" ry="2" />
+<text  x="1181.33" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::try_inline_full (1 samples, 0.09%)</title><rect x="124.6" y="901" width="1.1" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="127.60" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaFrameAnchor::make_walkable (1 samples, 0.09%)</title><rect x="639.3" y="917" width="1.0" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="642.26" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="741" width="1.1" height="15.0" fill="rgb(236,103,103)" rx="2" ry="2" />
+<text  x="1178.14" y="751.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SharedRuntime::complete_monitor_locking_C (5 samples, 0.45%)</title><rect x="1142.2" y="917" width="5.4" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="1145.25" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="741" width="1.1" height="15.0" fill="rgb(245,115,115)" rx="2" ry="2" />
+<text  x="1167.53" y="751.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectMonitor::wait (1 samples, 0.09%)</title><rect x="1180.4" y="981" width="1.1" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="1183.45" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::can_capture_store (1 samples, 0.09%)</title><rect x="114.0" y="997" width="1.1" height="15.0" fill="rgb(225,225,68)" rx="2" ry="2" />
+<text  x="116.99" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFence&lt;(ScopedFenceType)0&gt;::ScopedFence (3 samples, 0.27%)</title><rect x="991.6" y="853" width="3.1" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="994.56" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="629" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="121.24" y="639.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::transform_old (4 samples, 0.36%)</title><rect x="110.8" y="1029" width="4.3" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="113.81" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadParkedState::JavaThreadParkedState (13 samples, 1.17%)</title><rect x="472.7" y="933" width="13.8" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="475.66" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Unsafe_Park(JNIEnv_*, _jobject*, unsigned char, long) (2 samples, 0.18%)</title><rect x="1173.0" y="949" width="2.1" height="15.0" fill="rgb(217,76,76)" rx="2" ry="2" />
+<text  x="1176.02" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* Atomic::PlatformLoad&lt;8ul&gt;::operator()&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1011.7" y="805" width="1.1" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="1014.73" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_late_ctrl (23 samples, 2.07%)</title><rect x="81.1" y="997" width="24.4" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="84.10" y="1007.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`Unsafe_Unpark(JNIEnv_*, _jobject*, _jobject*) (1 samples, 0.09%)</title><rect x="1148.6" y="869" width="1.1" height="15.0" fill="rgb(202,54,54)" rx="2" ry="2" />
+<text  x="1151.62" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ValueRecorder&lt;_jobject*&gt;::maybe_find_index (1 samples, 0.09%)</title><rect x="12.1" y="933" width="1.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="15.12" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::build_ifg_physical (8 samples, 0.72%)</title><rect x="31.2" y="1029" width="8.5" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="34.22" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="693" width="1.1" height="15.0" fill="rgb(210,210,62)" rx="2" ry="2" />
+<text  x="116.99" y="703.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEvent&lt;EventThreadPark&gt;::is_enabled (1 samples, 0.09%)</title><rect x="600.0" y="917" width="1.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="603.00" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphKit::null_check_receiver_before_call (1 samples, 0.09%)</title><rect x="118.2" y="149" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="121.24" y="159.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="933" width="1.1" height="15.0" fill="rgb(244,114,114)" rx="2" ry="2" />
+<text  x="1167.53" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::threadObj (3 samples, 0.27%)</title><rect x="450.4" y="933" width="3.2" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="453.38" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`loadNKlassNode::rule (1 samples, 0.09%)</title><rect x="30.2" y="1013" width="1.0" height="15.0" fill="rgb(180,180,51)" rx="2" ry="2" />
+<text  x="33.16" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="533" width="1.1" height="15.0" fill="rgb(221,221,67)" rx="2" ry="2" />
+<text  x="121.24" y="543.5" ></text>
+</g>
+<g >
+<title>jdk/internal/misc/Unsafe:::park (1 samples, 0.09%)</title><rect x="1182.6" y="981" width="1.0" height="15.0" fill="rgb(59,208,59)" rx="2" ry="2" />
+<text  x="1185.57" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (1 samples, 0.09%)</title><rect x="118.2" y="229" width="1.1" height="15.0" fill="rgb(212,212,63)" rx="2" ry="2" />
+<text  x="121.24" y="239.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (1 samples, 0.09%)</title><rect x="39.7" y="1013" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="42.71" y="1023.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="853" width="1.1" height="15.0" fill="rgb(204,57,57)" rx="2" ry="2" />
+<text  x="1181.33" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::load_acquire&lt;void volatile*&gt; (4 samples, 0.36%)</title><rect x="1029.8" y="901" width="4.2" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="1032.77" y="911.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/core/layout/PatternLayout$PatternSerializer:::toSerializable (1 samples, 0.09%)</title><rect x="1164.5" y="645" width="1.1" height="15.0" fill="rgb(93,239,93)" rx="2" ry="2" />
+<text  x="1167.53" y="655.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_testcancel (1 samples, 0.09%)</title><rect x="942.8" y="917" width="1.0" height="15.0" fill="rgb(222,82,82)" rx="2" ry="2" />
+<text  x="945.75" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::insert_proj (1 samples, 0.09%)</title><rect x="27.0" y="1013" width="1.0" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="29.98" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="709" width="1.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="116.99" y="719.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="693" width="1.1" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="121.24" y="703.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::transform_old (1 samples, 0.09%)</title><rect x="109.7" y="1013" width="1.1" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="112.75" y="1023.5" ></text>
+</g>
+<g >
+<title>jdk/internal/misc/Unsafe:::park (924 samples, 83.09%)</title><rect x="159.6" y="965" width="980.5" height="15.0" fill="rgb(54,203,54)" rx="2" ry="2" />
+<text  x="162.62" y="975.5" >jdk/internal/misc/Unsafe:::park</text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSetIterator::next (1 samples, 0.09%)</title><rect x="35.5" y="997" width="1.0" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="38.47" y="1007.5" ></text>
+</g>
+<g >
+<title>vtable (1 samples, 0.09%)</title><rect x="1158.2" y="917" width="1.0" height="15.0" fill="rgb(236,102,102)" rx="2" ry="2" />
+<text  x="1161.17" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::sleep (1 samples, 0.09%)</title><rect x="1179.4" y="965" width="1.0" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="1182.39" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFenceGeneral&lt;(ScopedFenceType)0&gt;::postfix (3 samples, 0.27%)</title><rect x="1002.2" y="853" width="3.2" height="15.0" fill="rgb(195,195,57)" rx="2" ry="2" />
+<text  x="1005.18" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::gather_lrg_masks (4 samples, 0.36%)</title><rect x="40.8" y="1029" width="4.2" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="43.77" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* Atomic::PlatformLoad&lt;8ul&gt;::operator()&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1032.9" y="837" width="1.1" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="1035.95" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;void volatile*, Atomic::PlatformLoad&lt;8ul&gt;, void&gt;::operator() (1 samples, 0.09%)</title><rect x="1011.7" y="821" width="1.1" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="1014.73" y="831.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/spi/AbstractLogger:::tryLogMessage (1 samples, 0.09%)</title><rect x="1164.5" y="885" width="1.1" height="15.0" fill="rgb(67,216,67)" rx="2" ry="2" />
+<text  x="1167.53" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStateTransition::trans_from_native (4 samples, 0.36%)</title><rect x="380.3" y="949" width="4.3" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="383.34" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (6 samples, 0.54%)</title><rect x="117.2" y="965" width="6.3" height="15.0" fill="rgb(210,210,62)" rx="2" ry="2" />
+<text  x="120.18" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (4 samples, 0.36%)</title><rect x="118.2" y="885" width="4.3" height="15.0" fill="rgb(205,205,60)" rx="2" ry="2" />
+<text  x="121.24" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`java_lang_Thread::set_thread_status (13 samples, 1.17%)</title><rect x="1103.0" y="933" width="13.8" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="1105.99" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="677" width="1.1" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="116.99" y="687.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_field_access (1 samples, 0.09%)</title><rect x="120.4" y="757" width="1.0" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="123.36" y="767.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="805" width="1.1" height="15.0" fill="rgb(214,71,71)" rx="2" ry="2" />
+<text  x="1181.33" y="815.5" ></text>
+</g>
+<g >
+<title>libsystem_platform.dylib`_platform_bzero$VARIANT$Haswell (1 samples, 0.09%)</title><rect x="60.9" y="1013" width="1.1" height="15.0" fill="rgb(242,112,112)" rx="2" ry="2" />
+<text  x="63.94" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStateTransition::transition_from_native (1 samples, 0.09%)</title><rect x="1173.0" y="933" width="1.1" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="1176.02" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::load_acquire&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1173.0" y="901" width="1.1" height="15.0" fill="rgb(205,205,60)" rx="2" ry="2" />
+<text  x="1176.02" y="911.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter:::format (1 samples, 0.09%)</title><rect x="1162.4" y="837" width="1.1" height="15.0" fill="rgb(102,247,102)" rx="2" ry="2" />
+<text  x="1165.41" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="821" width="1.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="116.99" y="831.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="981" width="1.1" height="15.0" fill="rgb(213,213,63)" rx="2" ry="2" />
+<text  x="116.99" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`to_abstime(timespec*, long, bool) (25 samples, 2.25%)</title><rect x="706.1" y="917" width="26.5" height="15.0" fill="rgb(215,72,72)" rx="2" ry="2" />
+<text  x="709.12" y="927.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`TypePtr::xmeet (1 samples, 0.09%)</title><rect x="118.2" y="85" width="1.1" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="121.24" y="95.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (7 samples, 0.63%)</title><rect x="116.1" y="1013" width="7.4" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="119.12" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::split_if_with_blocks_pre (1 samples, 0.09%)</title><rect x="108.7" y="1013" width="1.0" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="111.69" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::compile_method (5 samples, 0.45%)</title><rect x="124.6" y="1061" width="5.3" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="127.60" y="1071.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/NetworkClient:::poll (3 samples, 0.27%)</title><rect x="1149.7" y="917" width="3.2" height="15.0" fill="rgb(96,242,96)" rx="2" ry="2" />
+<text  x="1152.68" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Block_Stack::most_frequent_successor (1 samples, 0.09%)</title><rect x="18.5" y="981" width="1.1" height="15.0" fill="rgb(202,202,59)" rx="2" ry="2" />
+<text  x="21.49" y="991.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_cond_wait (61 samples, 5.49%)</title><rect x="878.0" y="917" width="64.8" height="15.0" fill="rgb(250,123,123)" rx="2" ry="2" />
+<text  x="881.02" y="927.5" >libsyst..</text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="677" width="1.1" height="15.0" fill="rgb(227,90,90)" rx="2" ry="2" />
+<text  x="1181.33" y="687.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LIR_Assembler::add_call_info (1 samples, 0.09%)</title><rect x="125.7" y="965" width="1.0" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="128.67" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::Size (1 samples, 0.09%)</title><rect x="41.8" y="1013" width="1.1" height="15.0" fill="rgb(194,194,56)" rx="2" ry="2" />
+<text  x="44.83" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`to_abstime(timespec*, long, bool) (1 samples, 0.09%)</title><rect x="1180.4" y="949" width="1.1" height="15.0" fill="rgb(226,88,88)" rx="2" ry="2" />
+<text  x="1183.45" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciBytecodeStream::get_method (1 samples, 0.09%)</title><rect x="122.5" y="901" width="1.0" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="125.48" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;int, Atomic::PlatformLoad&lt;4ul&gt;, void&gt;::operator() (3 samples, 0.27%)</title><rect x="465.2" y="853" width="3.2" height="15.0" fill="rgb(180,180,51)" rx="2" ry="2" />
+<text  x="468.23" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CodeEmitInfo::record_debug_info (1 samples, 0.09%)</title><rect x="125.7" y="949" width="1.0" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="128.67" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectMonitor::TrySpin (2 samples, 0.18%)</title><rect x="1143.3" y="869" width="2.1" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="1146.31" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_MP (3 samples, 0.27%)</title><rect x="1016.0" y="901" width="3.2" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="1018.97" y="911.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject:::awaitNanos (2 samples, 0.18%)</title><rect x="1173.0" y="981" width="2.1" height="15.0" fill="rgb(67,215,67)" rx="2" ry="2" />
+<text  x="1176.02" y="991.5" ></text>
+</g>
+<g >
+<title>java/lang/Thread:::sleep (1 samples, 0.09%)</title><rect x="1179.4" y="997" width="1.0" height="15.0" fill="rgb(84,231,84)" rx="2" ry="2" />
+<text  x="1182.39" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFenceGeneral&lt;(ScopedFenceType)0&gt;::prefix (1 samples, 0.09%)</title><rect x="463.1" y="869" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="466.11" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::is_bound (1 samples, 0.09%)</title><rect x="42.9" y="1013" width="1.1" height="15.0" fill="rgb(188,188,55)" rx="2" ry="2" />
+<text  x="45.90" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SimpleThresholdPolicy::call_event (1 samples, 0.09%)</title><rect x="1155.0" y="789" width="1.0" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="1157.98" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::do_linear_scan (3 samples, 0.27%)</title><rect x="126.7" y="1013" width="3.2" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="129.73" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::try_inline (1 samples, 0.09%)</title><rect x="124.6" y="837" width="1.1" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="127.60" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl_no_update (1 samples, 0.09%)</title><rect x="108.7" y="981" width="1.0" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="111.69" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::PlatformOrderedLoad&lt;8ul, (ScopedFenceType)0&gt;::operator()&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1031.9" y="869" width="1.0" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="1034.89" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PredictedCallGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="581" width="1.1" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="121.24" y="591.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`BCEscapeAnalyzer::BCEscapeAnalyzer (1 samples, 0.09%)</title><rect x="70.5" y="981" width="1.0" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="73.49" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`HandleMark::pop_and_restore (31 samples, 2.79%)</title><rect x="400.5" y="933" width="32.9" height="15.0" fill="rgb(210,210,62)" rx="2" ry="2" />
+<text  x="403.50" y="943.5" >li..</text>
+</g>
+<g >
+<title>org/apache/logging/log4j/core/config/LoggerConfig:::callAppenders (1 samples, 0.09%)</title><rect x="1164.5" y="805" width="1.1" height="15.0" fill="rgb(73,221,73)" rx="2" ry="2" />
+<text  x="1167.53" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadService::is_thread_monitoring_contention (4 samples, 0.36%)</title><rect x="479.0" y="917" width="4.3" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="482.03" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (7 samples, 0.63%)</title><rect x="116.1" y="997" width="7.4" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="119.12" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::load_acquire&lt;void volatile*&gt; (25 samples, 2.25%)</title><rect x="986.3" y="885" width="26.5" height="15.0" fill="rgb(202,202,59)" rx="2" ry="2" />
+<text  x="989.26" y="895.5" >l..</text>
+</g>
+<g >
+<title>all (1,112 samples, 100%)</title><rect x="10.0" y="1221" width="1180.0" height="15.0" fill="rgb(202,53,53)" rx="2" ry="2" />
+<text  x="13.00" y="1231.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (1 samples, 0.09%)</title><rect x="118.2" y="357" width="1.1" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="121.24" y="367.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::emit_code_body (1 samples, 0.09%)</title><rect x="125.7" y="1029" width="1.0" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="128.67" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InlineTree::check_can_parse (1 samples, 0.09%)</title><rect x="116.1" y="949" width="1.1" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="119.12" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="901" width="1.1" height="15.0" fill="rgb(213,213,63)" rx="2" ry="2" />
+<text  x="116.99" y="911.5" ></text>
+</g>
+<g >
+<title>Interpreter (3 samples, 0.27%)</title><rect x="1175.1" y="901" width="3.2" height="15.0" fill="rgb(235,102,102)" rx="2" ry="2" />
+<text  x="1178.14" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parker::park (1 samples, 0.09%)</title><rect x="1182.6" y="949" width="1.0" height="15.0" fill="rgb(213,213,63)" rx="2" ry="2" />
+<text  x="1185.57" y="959.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/RequestFuture:::complete (1 samples, 0.09%)</title><rect x="1152.9" y="901" width="1.0" height="15.0" fill="rgb(94,241,94)" rx="2" ry="2" />
+<text  x="1155.86" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::Dominators (1 samples, 0.09%)</title><rect x="73.7" y="1029" width="1.0" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="76.67" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`bool CompilerOracle::has_option_value&lt;double&gt; (1 samples, 0.09%)</title><rect x="1155.0" y="757" width="1.0" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="1157.98" y="767.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (7 samples, 0.63%)</title><rect x="116.1" y="1029" width="7.4" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="119.12" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::find_alias_type (1 samples, 0.09%)</title><rect x="120.4" y="725" width="1.0" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="123.36" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="485" width="1.1" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="121.24" y="495.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIFG::effective_degree (1 samples, 0.09%)</title><rect x="58.8" y="1013" width="1.1" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="61.81" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (6 samples, 0.54%)</title><rect x="117.2" y="949" width="6.3" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="120.18" y="959.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`mach_absolute_time (1 samples, 0.09%)</title><rect x="1179.4" y="933" width="1.0" height="15.0" fill="rgb(205,57,57)" rx="2" ry="2" />
+<text  x="1182.39" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* Atomic::load&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1011.7" y="837" width="1.1" height="15.0" fill="rgb(180,180,51)" rx="2" ry="2" />
+<text  x="1014.73" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::ordered_load&lt;void volatile*, (ScopedFenceType)0&gt; (1 samples, 0.09%)</title><rect x="1032.9" y="869" width="1.1" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="1035.95" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::handle_special_suspend_equivalent_condition (36 samples, 3.24%)</title><rect x="640.3" y="917" width="38.2" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="643.32" y="927.5" >lib..</text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (1 samples, 0.09%)</title><rect x="23.8" y="997" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="26.79" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OrderAccess::fence (15 samples, 1.35%)</title><rect x="964.0" y="917" width="15.9" height="15.0" fill="rgb(225,225,68)" rx="2" ry="2" />
+<text  x="966.97" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_MP (1 samples, 0.09%)</title><rect x="696.6" y="917" width="1.0" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="699.56" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::build_and_optimize (36 samples, 3.24%)</title><rect x="72.6" y="1045" width="38.2" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="75.61" y="1055.5" >lib..</text>
+</g>
+<g >
+<title>libjvm.dylib`Node::del_out (1 samples, 0.09%)</title><rect x="28.0" y="981" width="1.1" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="31.04" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parker::park (307 samples, 27.61%)</title><rect x="624.4" y="933" width="325.8" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="627.41" y="943.5" >libjvm.dylib`Parker::park</text>
+</g>
+<g >
+<title>libjvm.dylib`InterfaceSupport::serialize_thread_state_internal (3 samples, 0.27%)</title><rect x="636.1" y="917" width="3.2" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="639.08" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`elapsedTimer::stop (1 samples, 0.09%)</title><rect x="589.4" y="917" width="1.0" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="592.39" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::find_exact_control (1 samples, 0.09%)</title><rect x="114.0" y="629" width="1.1" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="116.99" y="639.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InterfaceSupport::serialize_thread_state_internal (2 samples, 0.18%)</title><rect x="687.0" y="901" width="2.1" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="690.01" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseRemoveUseless::PhaseRemoveUseless (1 samples, 0.09%)</title><rect x="123.5" y="1061" width="1.1" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="126.54" y="1071.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::Simplify (1 samples, 0.09%)</title><rect x="24.9" y="1029" width="1.0" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="27.86" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::split_if_with_blocks (2 samples, 0.18%)</title><rect x="107.6" y="1029" width="2.1" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="110.63" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`compiler_barrier() (2 samples, 0.18%)</title><rect x="1005.4" y="853" width="2.1" height="15.0" fill="rgb(216,74,74)" rx="2" ry="2" />
+<text  x="1008.36" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JVM_Sleep (1 samples, 0.09%)</title><rect x="1179.4" y="981" width="1.0" height="15.0" fill="rgb(243,113,113)" rx="2" ry="2" />
+<text  x="1182.39" y="991.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/ReentrantLock:::lock (1 samples, 0.09%)</title><rect x="1182.6" y="997" width="1.0" height="15.0" fill="rgb(108,253,108)" rx="2" ry="2" />
+<text  x="1185.57" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScanWalker::free_exclude_active_any (1 samples, 0.09%)</title><rect x="126.7" y="933" width="1.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="129.73" y="943.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`__commpage_gettimeofday_internal (15 samples, 1.35%)</title><rect x="714.6" y="885" width="15.9" height="15.0" fill="rgb(217,75,75)" rx="2" ry="2" />
+<text  x="717.60" y="895.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter$FormatSpecifier:::print (1 samples, 0.09%)</title><rect x="1162.4" y="789" width="1.1" height="15.0" fill="rgb(78,226,78)" rx="2" ry="2" />
+<text  x="1165.41" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`C2Compiler::compile_method (108 samples, 9.71%)</title><rect x="10.0" y="1093" width="114.6" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="13.00" y="1103.5" >libjvm.dylib`C..</text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (1 samples, 0.09%)</title><rect x="59.9" y="1013" width="1.0" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="62.87" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`TypeOopPtr::TypeOopPtr (1 samples, 0.09%)</title><rect x="118.2" y="37" width="1.1" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="121.24" y="47.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIFG::remove_node (1 samples, 0.09%)</title><rect x="24.9" y="1013" width="1.0" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="27.86" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::access_field (1 samples, 0.09%)</title><rect x="124.6" y="773" width="1.1" height="15.0" fill="rgb(210,210,63)" rx="2" ry="2" />
+<text  x="127.60" y="783.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="869" width="1.1" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="116.99" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::Compile (108 samples, 9.71%)</title><rect x="10.0" y="1077" width="114.6" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="13.00" y="1087.5" >libjvm.dylib`C..</text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFence&lt;(ScopedFenceType)0&gt;::~ScopedFence (4 samples, 0.36%)</title><rect x="458.9" y="869" width="4.2" height="15.0" fill="rgb(210,210,63)" rx="2" ry="2" />
+<text  x="461.87" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node_Array::insert (1 samples, 0.09%)</title><rect x="27.0" y="997" width="1.0" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="29.98" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::IndexSet (1 samples, 0.09%)</title><rect x="31.2" y="1013" width="1.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="34.22" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OrderAccess::fence (5 samples, 0.45%)</title><rect x="681.7" y="917" width="5.3" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="684.71" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`BoolNode::Ideal (1 samples, 0.09%)</title><rect x="110.8" y="1013" width="1.1" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="113.81" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::is_suspend_after_native (1 samples, 0.09%)</title><rect x="442.9" y="933" width="1.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="445.95" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::in (1 samples, 0.09%)</title><rect x="81.1" y="917" width="1.1" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="84.10" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::global_code_motion (3 samples, 0.27%)</title><rect x="19.6" y="1029" width="3.1" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="22.55" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciEnv::ciEnv (1 samples, 0.09%)</title><rect x="129.9" y="1093" width="1.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="132.91" y="1103.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseConservativeCoalesce::coalesce (3 samples, 0.27%)</title><rect x="55.6" y="1013" width="3.2" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="58.63" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::TryFast (8 samples, 0.72%)</title><rect x="669.0" y="869" width="8.5" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="671.97" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JfrEventSetting::setting (2 samples, 0.18%)</title><rect x="608.5" y="901" width="2.1" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="611.49" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IdealLoopTree::loop_predication (1 samples, 0.09%)</title><rect x="72.6" y="997" width="1.1" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="75.61" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_get_xxx (1 samples, 0.09%)</title><rect x="120.4" y="741" width="1.0" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="123.36" y="751.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="757" width="1.1" height="15.0" fill="rgb(223,83,83)" rx="2" ry="2" />
+<text  x="1167.53" y="767.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadInVMfromNative::~ThreadInVMfromNative (1 samples, 0.09%)</title><rect x="378.2" y="949" width="1.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="381.22" y="959.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer:::release (1 samples, 0.09%)</title><rect x="1161.3" y="933" width="1.1" height="15.0" fill="rgb(79,226,79)" rx="2" ry="2" />
+<text  x="1164.35" y="943.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="565" width="1.1" height="15.0" fill="rgb(233,98,98)" rx="2" ry="2" />
+<text  x="1181.33" y="575.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFence&lt;(ScopedFenceType)0&gt;::~ScopedFence (6 samples, 0.54%)</title><rect x="995.8" y="853" width="6.4" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="998.81" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIFG::init (1 samples, 0.09%)</title><rect x="60.9" y="1029" width="1.1" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="63.94" y="1039.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/Fetcher:::sendFetches (2 samples, 0.18%)</title><rect x="1159.2" y="933" width="2.1" height="15.0" fill="rgb(96,242,96)" rx="2" ry="2" />
+<text  x="1162.23" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`TypePtr::xmeet (1 samples, 0.09%)</title><rect x="118.2" y="101" width="1.1" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="121.24" y="111.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom (1 samples, 0.09%)</title><rect x="105.5" y="997" width="1.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="108.50" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::set_req (1 samples, 0.09%)</title><rect x="28.0" y="997" width="1.1" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="31.04" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::iterate_bytecodes_for_block (1 samples, 0.09%)</title><rect x="124.6" y="789" width="1.1" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="127.60" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="725" width="1.1" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="116.99" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::post_allocate_copy_removal (9 samples, 0.81%)</title><rect x="45.0" y="1029" width="9.6" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="48.02" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="405" width="1.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="121.24" y="415.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`pthread_mutex_unlock (16 samples, 1.44%)</title><rect x="1123.1" y="933" width="17.0" height="15.0" fill="rgb(221,81,81)" rx="2" ry="2" />
+<text  x="1126.15" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`int OrderAccess::load_acquire&lt;int&gt; (13 samples, 1.17%)</title><rect x="456.7" y="901" width="13.8" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="459.74" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConnectionGraph::add_field (1 samples, 0.09%)</title><rect x="69.4" y="997" width="1.1" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="72.42" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::is_dominator (21 samples, 1.89%)</title><rect x="83.2" y="981" width="22.3" height="15.0" fill="rgb(213,213,64)" rx="2" ry="2" />
+<text  x="86.22" y="991.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::compile_java_method (5 samples, 0.45%)</title><rect x="124.6" y="1045" width="5.3" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="127.60" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="789" width="1.1" height="15.0" fill="rgb(176,176,50)" rx="2" ry="2" />
+<text  x="116.99" y="799.5" ></text>
+</g>
+<g >
+<title>Interpreter (975 samples, 87.68%)</title><rect x="138.4" y="997" width="1034.6" height="15.0" fill="rgb(204,55,55)" rx="2" ry="2" />
+<text  x="141.40" y="1007.5" >Interpreter</text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/Fetcher:::prepareFetchRequests (2 samples, 0.18%)</title><rect x="1159.2" y="917" width="2.1" height="15.0" fill="rgb(76,224,76)" rx="2" ry="2" />
+<text  x="1162.23" y="927.5" ></text>
+</g>
+<g >
+<title>java/lang/Thread:::isInterrupted (1 samples, 0.09%)</title><rect x="1147.6" y="917" width="1.0" height="15.0" fill="rgb(88,235,88)" rx="2" ry="2" />
+<text  x="1150.55" y="927.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="629" width="1.1" height="15.0" fill="rgb(240,109,109)" rx="2" ry="2" />
+<text  x="1181.33" y="639.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::set_thread_status (5 samples, 0.45%)</title><rect x="591.5" y="933" width="5.3" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="594.51" y="943.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="693" width="1.1" height="15.0" fill="rgb(250,123,123)" rx="2" ry="2" />
+<text  x="1178.14" y="703.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_mutex_droplock (11 samples, 0.99%)</title><rect x="930.0" y="901" width="11.7" height="15.0" fill="rgb(251,124,124)" rx="2" ry="2" />
+<text  x="933.02" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OrderAccess::acquire (1 samples, 0.09%)</title><rect x="990.5" y="853" width="1.1" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="993.50" y="863.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`mach_absolute_time (1 samples, 0.09%)</title><rect x="730.5" y="885" width="1.1" height="15.0" fill="rgb(228,92,92)" rx="2" ry="2" />
+<text  x="733.52" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSetIterator::next (1 samples, 0.09%)</title><rect x="58.8" y="997" width="1.1" height="15.0" fill="rgb(212,212,63)" rx="2" ry="2" />
+<text  x="61.81" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::flatten_alias_type (1 samples, 0.09%)</title><rect x="120.4" y="709" width="1.0" height="15.0" fill="rgb(188,188,54)" rx="2" ry="2" />
+<text  x="123.36" y="719.5" ></text>
+</g>
+<g >
+<title>Interpreter (2 samples, 0.18%)</title><rect x="1176.2" y="869" width="2.1" height="15.0" fill="rgb(234,100,100)" rx="2" ry="2" />
+<text  x="1179.21" y="879.5" ></text>
+</g>
+<g >
+<title>com/google/common/collect/AbstractIterator:::tryToComputeNext (1 samples, 0.09%)</title><rect x="1166.7" y="933" width="1.0" height="15.0" fill="rgb(94,240,94)" rx="2" ry="2" />
+<text  x="1169.65" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`CallNode::Ideal (1 samples, 0.09%)</title><rect x="111.9" y="1013" width="1.0" height="15.0" fill="rgb(227,227,68)" rx="2" ry="2" />
+<text  x="114.87" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;void volatile*, Atomic::PlatformLoad&lt;8ul&gt;, void&gt;::operator() (1 samples, 0.09%)</title><rect x="1010.7" y="837" width="1.0" height="15.0" fill="rgb(222,222,67)" rx="2" ry="2" />
+<text  x="1013.67" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PredictedCallGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="165" width="1.1" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="121.24" y="175.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`thread_start (1,112 samples, 100.00%)</title><rect x="10.0" y="1205" width="1180.0" height="15.0" fill="rgb(226,88,88)" rx="2" ry="2" />
+<text  x="13.00" y="1215.5" >libsystem_pthread.dylib`thread_start</text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (1 samples, 0.09%)</title><rect x="21.7" y="965" width="1.0" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="24.67" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::set_req (1 samples, 0.09%)</title><rect x="19.6" y="997" width="1.0" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="22.55" y="1007.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/FetchSessionHandler:::handleResponse (1 samples, 0.09%)</title><rect x="1152.9" y="853" width="1.0" height="15.0" fill="rgb(82,229,82)" rx="2" ry="2" />
+<text  x="1155.86" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::PlatformEvent::park (1 samples, 0.09%)</title><rect x="1180.4" y="965" width="1.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="1183.45" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IdealLoopTree::loop_predication (1 samples, 0.09%)</title><rect x="72.6" y="1029" width="1.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="75.61" y="1039.5" ></text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_cond_updateval (22 samples, 1.98%)</title><rect x="906.7" y="901" width="23.3" height="15.0" fill="rgb(230,93,93)" rx="2" ry="2" />
+<text  x="909.67" y="911.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (3 samples, 0.27%)</title><rect x="118.2" y="805" width="3.2" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="121.24" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JVM_MonitorWait (1 samples, 0.09%)</title><rect x="1180.4" y="1013" width="1.1" height="15.0" fill="rgb(242,111,111)" rx="2" ry="2" />
+<text  x="1183.45" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciTypeFlow::flow_types (1 samples, 0.09%)</title><rect x="116.1" y="901" width="1.1" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="119.12" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Unsafe_Park(JNIEnv_*, _jobject*, unsigned char, long) (1 samples, 0.09%)</title><rect x="1182.6" y="965" width="1.0" height="15.0" fill="rgb(220,80,80)" rx="2" ry="2" />
+<text  x="1185.57" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::run (1,112 samples, 100.00%)</title><rect x="10.0" y="1157" width="1180.0" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="13.00" y="1167.5" >libjvm.dylib`JavaThread::run</text>
+</g>
+<g >
+<title>libjvm.dylib`StoreNode::Ideal (1 samples, 0.09%)</title><rect x="114.0" y="1013" width="1.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="116.99" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="965" width="1.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="116.99" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`compiler_barrier() (2 samples, 0.18%)</title><rect x="1042.5" y="933" width="2.1" height="15.0" fill="rgb(214,71,71)" rx="2" ry="2" />
+<text  x="1045.50" y="943.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/FutureTask:::run (3 samples, 0.27%)</title><rect x="1175.1" y="981" width="3.2" height="15.0" fill="rgb(61,210,61)" rx="2" ry="2" />
+<text  x="1178.14" y="991.5" ></text>
+</g>
+<g >
+<title>com/google/common/collect/AbstractIterator:::hasNext (1 samples, 0.09%)</title><rect x="1175.1" y="773" width="1.1" height="15.0" fill="rgb(83,230,83)" rx="2" ry="2" />
+<text  x="1178.14" y="783.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::elapsed_counter (80 samples, 7.19%)</title><rect x="503.4" y="885" width="84.9" height="15.0" fill="rgb(183,183,52)" rx="2" ry="2" />
+<text  x="506.44" y="895.5" >libjvm.dy..</text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="741" width="1.1" height="15.0" fill="rgb(222,222,67)" rx="2" ry="2" />
+<text  x="116.99" y="751.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStateTransition::transition_from_native (20 samples, 1.80%)</title><rect x="1014.9" y="933" width="21.2" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="1017.91" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::do_global_code_motion (4 samples, 0.36%)</title><rect x="18.5" y="1045" width="4.2" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="21.49" y="1055.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/TimeUnit:::sleep (1 samples, 0.09%)</title><rect x="1179.4" y="1013" width="1.0" height="15.0" fill="rgb(87,234,87)" rx="2" ry="2" />
+<text  x="1182.39" y="1023.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/core/config/LoggerConfig:::log (1 samples, 0.09%)</title><rect x="1178.3" y="661" width="1.1" height="15.0" fill="rgb(54,203,54)" rx="2" ry="2" />
+<text  x="1181.33" y="671.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::find_alias_type (1 samples, 0.09%)</title><rect x="69.4" y="965" width="1.1" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="72.42" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::invoke (1 samples, 0.09%)</title><rect x="124.6" y="853" width="1.1" height="15.0" fill="rgb(221,221,67)" rx="2" ry="2" />
+<text  x="127.60" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OrderAccess::fence (7 samples, 0.63%)</title><rect x="689.1" y="901" width="7.5" height="15.0" fill="rgb(216,216,65)" rx="2" ry="2" />
+<text  x="692.14" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Matcher::xform (5 samples, 0.45%)</title><rect x="13.2" y="1029" width="5.3" height="15.0" fill="rgb(216,216,64)" rx="2" ry="2" />
+<text  x="16.18" y="1039.5" ></text>
+</g>
+<g >
+<title>libdyld.dylib`tlv_get_addr (1 samples, 0.09%)</title><rect x="653.1" y="901" width="1.0" height="15.0" fill="rgb(253,127,127)" rx="2" ry="2" />
+<text  x="656.06" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_early_ctrl (3 samples, 0.27%)</title><rect x="75.8" y="997" width="3.2" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="78.79" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="885" width="1.1" height="15.0" fill="rgb(212,212,63)" rx="2" ry="2" />
+<text  x="116.99" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="949" width="1.1" height="15.0" fill="rgb(219,78,78)" rx="2" ry="2" />
+<text  x="1167.53" y="959.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/Fetcher$1:::onSuccess (1 samples, 0.09%)</title><rect x="1162.4" y="901" width="1.1" height="15.0" fill="rgb(70,219,70)" rx="2" ry="2" />
+<text  x="1165.41" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Chunk::next (15 samples, 1.35%)</title><rect x="417.5" y="917" width="15.9" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="420.48" y="927.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/KafkaConsumer:::pollOnce (20 samples, 1.80%)</title><rect x="1140.1" y="949" width="21.2" height="15.0" fill="rgb(69,217,69)" rx="2" ry="2" />
+<text  x="1143.13" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadParkedState::~JavaThreadParkedState (2 samples, 0.18%)</title><rect x="361.2" y="949" width="2.2" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="364.24" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::iterate_bytecodes_for_block (1 samples, 0.09%)</title><rect x="124.6" y="869" width="1.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="127.60" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`DebugInformationRecorder::dump_object_pool(GrowableArray (1 samples, 0.09%)</title><rect x="12.1" y="1013" width="1.1" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="15.12" y="1023.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/network/Selector:::poll (1 samples, 0.09%)</title><rect x="1151.8" y="901" width="1.1" height="15.0" fill="rgb(106,252,106)" rx="2" ry="2" />
+<text  x="1154.80" y="911.5" ></text>
+</g>
+<g >
+<title>counter_overflow (1 samples, 0.09%)</title><rect x="1155.0" y="853" width="1.0" height="15.0" fill="rgb(234,100,100)" rx="2" ry="2" />
+<text  x="1157.98" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_MP (2 samples, 0.18%)</title><rect x="637.1" y="901" width="2.2" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="640.14" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OrderAccess::fence (4 samples, 0.36%)</title><rect x="1021.3" y="917" width="4.2" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="1024.28" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::call_generator (1 samples, 0.09%)</title><rect x="117.2" y="901" width="1.0" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="120.18" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::fill_buffer (1 samples, 0.09%)</title><rect x="12.1" y="1045" width="1.1" height="15.0" fill="rgb(224,224,68)" rx="2" ry="2" />
+<text  x="15.12" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::build_dominator_tree (1 samples, 0.09%)</title><rect x="18.5" y="1029" width="1.1" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="21.49" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::parker (6 samples, 0.54%)</title><rect x="444.0" y="933" width="6.4" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="447.01" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`mask_bits_are_true(long, long) (1 samples, 0.09%)</title><rect x="1012.8" y="901" width="1.0" height="15.0" fill="rgb(230,94,94)" rx="2" ry="2" />
+<text  x="1015.79" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`elapsedTimer::start (55 samples, 4.95%)</title><rect x="1044.6" y="933" width="58.4" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="1047.62" y="943.5" >libjvm..</text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStateTransition::transition_and_fence (54 samples, 4.86%)</title><rect x="957.6" y="933" width="57.3" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="960.61" y="943.5" >libjvm..</text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`_pthread_testcancel (1 samples, 0.09%)</title><rect x="941.7" y="901" width="1.1" height="15.0" fill="rgb(208,62,62)" rx="2" ry="2" />
+<text  x="944.69" y="911.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="757" width="1.1" height="15.0" fill="rgb(201,52,52)" rx="2" ry="2" />
+<text  x="1181.33" y="767.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::lock_without_safepoint_check (18 samples, 1.62%)</title><rect x="658.4" y="901" width="19.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="661.36" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`RegMask::is_aligned_pairs (1 samples, 0.09%)</title><rect x="29.1" y="981" width="1.1" height="15.0" fill="rgb(207,207,61)" rx="2" ry="2" />
+<text  x="32.10" y="991.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="885" width="1.1" height="15.0" fill="rgb(219,78,78)" rx="2" ry="2" />
+<text  x="1178.14" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (987 samples, 88.76%)</title><rect x="132.0" y="1013" width="1047.4" height="15.0" fill="rgb(204,56,56)" rx="2" ry="2" />
+<text  x="135.03" y="1023.5" >Interpreter</text>
+</g>
+<g >
+<title>libsystem_pthread.dylib`pthread_mutex_lock (1 samples, 0.09%)</title><rect x="129.9" y="997" width="1.1" height="15.0" fill="rgb(203,55,55)" rx="2" ry="2" />
+<text  x="132.91" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::del_out (1 samples, 0.09%)</title><rect x="19.6" y="981" width="1.0" height="15.0" fill="rgb(224,224,67)" rx="2" ry="2" />
+<text  x="22.55" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="757" width="1.1" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="116.99" y="767.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::ordered_load&lt;void volatile*, (ScopedFenceType)0&gt; (5 samples, 0.45%)</title><rect x="1007.5" y="853" width="5.3" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="1010.48" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConnectionGraph::do_analysis (2 samples, 0.18%)</title><rect x="69.4" y="1045" width="2.1" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="72.42" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::del_out (1 samples, 0.09%)</title><rect x="111.9" y="965" width="1.0" height="15.0" fill="rgb(224,224,67)" rx="2" ry="2" />
+<text  x="114.87" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseGVN::transform_no_reclaim (1 samples, 0.09%)</title><rect x="119.3" y="693" width="1.1" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="122.30" y="703.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="709" width="1.1" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="121.24" y="719.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ciObjectFactory::ciObjectFactory (1 samples, 0.09%)</title><rect x="129.9" y="1077" width="1.1" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="132.91" y="1087.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer:::unparkSuccessor (1 samples, 0.09%)</title><rect x="1148.6" y="901" width="1.1" height="15.0" fill="rgb(59,208,59)" rx="2" ry="2" />
+<text  x="1151.62" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStatistics::check_and_reset_timer (3 samples, 0.27%)</title><rect x="1036.1" y="933" width="3.2" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="1039.13" y="943.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1175.1" y="853" width="1.1" height="15.0" fill="rgb(253,128,128)" rx="2" ry="2" />
+<text  x="1178.14" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`DYLD-STUB$$pthread_mutex_unlock (2 samples, 0.18%)</title><rect x="397.3" y="933" width="2.1" height="15.0" fill="rgb(233,99,99)" rx="2" ry="2" />
+<text  x="400.32" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::build_loop_late (27 samples, 2.43%)</title><rect x="79.0" y="1029" width="28.6" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="81.97" y="1039.5" >li..</text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="949" width="1.1" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="116.99" y="959.5" ></text>
+</g>
+<g >
+<title>reactor/core/publisher/ParallelMergeSequential$MergeSequentialInner:::onNext (2 samples, 0.18%)</title><rect x="1176.2" y="885" width="2.1" height="15.0" fill="rgb(176,176,50)" rx="2" ry="2" />
+<text  x="1179.21" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="869" width="1.1" height="15.0" fill="rgb(201,51,51)" rx="2" ry="2" />
+<text  x="1181.33" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseLive::add_livein (1 samples, 0.09%)</title><rect x="21.7" y="981" width="1.0" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="24.67" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaCalls::call_virtual (998 samples, 89.75%)</title><rect x="131.0" y="1109" width="1059.0" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="133.97" y="1119.5" >libjvm.dylib`JavaCalls::call_virtual</text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::poll_bit (1 samples, 0.09%)</title><rect x="985.2" y="885" width="1.1" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="988.20" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseAggressiveCoalesce::insert_copies (1 samples, 0.09%)</title><rect x="22.7" y="1029" width="1.1" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="25.73" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`BCEscapeAnalyzer::compute_escape_info (1 samples, 0.09%)</title><rect x="70.5" y="965" width="1.0" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="73.49" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="293" width="1.1" height="15.0" fill="rgb(224,224,67)" rx="2" ry="2" />
+<text  x="121.24" y="303.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IR::IR (1 samples, 0.09%)</title><rect x="124.6" y="1013" width="1.1" height="15.0" fill="rgb(214,214,64)" rx="2" ry="2" />
+<text  x="127.60" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IntervalWalker::walk_to (1 samples, 0.09%)</title><rect x="126.7" y="981" width="1.1" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="129.73" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::has_node (1 samples, 0.09%)</title><rect x="106.6" y="1013" width="1.0" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="109.56" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`TypeInstPtr::eq (1 samples, 0.09%)</title><rect x="120.4" y="661" width="1.0" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="123.36" y="671.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSetIterator::next (1 samples, 0.09%)</title><rect x="57.8" y="965" width="1.0" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="60.75" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (3 samples, 0.27%)</title><rect x="118.2" y="837" width="3.2" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="121.24" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::is_alive (1 samples, 0.09%)</title><rect x="590.4" y="933" width="1.1" height="15.0" fill="rgb(178,178,51)" rx="2" ry="2" />
+<text  x="593.45" y="943.5" ></text>
+</g>
+<g >
+<title>com/google/common/collect/AbstractIterator:::tryToComputeNext (1 samples, 0.09%)</title><rect x="1175.1" y="757" width="1.1" height="15.0" fill="rgb(53,203,53)" rx="2" ry="2" />
+<text  x="1178.14" y="767.5" ></text>
+</g>
+<g >
+<title>_complete_monitor_locking_Java (5 samples, 0.45%)</title><rect x="1142.2" y="933" width="5.4" height="15.0" fill="rgb(210,65,65)" rx="2" ry="2" />
+<text  x="1145.25" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Runtime1::counter_overflow (1 samples, 0.09%)</title><rect x="1155.0" y="837" width="1.0" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="1157.98" y="847.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::trySend (2 samples, 0.18%)</title><rect x="1153.9" y="917" width="2.1" height="15.0" fill="rgb(63,212,63)" rx="2" ry="2" />
+<text  x="1156.92" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`int Atomic::load&lt;int&gt; (1 samples, 0.09%)</title><rect x="464.2" y="869" width="1.0" height="15.0" fill="rgb(182,182,52)" rx="2" ry="2" />
+<text  x="467.17" y="879.5" ></text>
+</g>
+<g >
+<title>java/util/concurrent/locks/AbstractQueuedSynchronizer:::parkAndCheckInterrupt (2 samples, 0.18%)</title><rect x="1186.8" y="981" width="2.1" height="15.0" fill="rgb(87,234,87)" rx="2" ry="2" />
+<text  x="1189.82" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::Split (5 samples, 0.45%)</title><rect x="25.9" y="1029" width="5.3" height="15.0" fill="rgb(176,176,50)" rx="2" ry="2" />
+<text  x="28.92" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JVM_IsInterrupted (1 samples, 0.09%)</title><rect x="1147.6" y="901" width="1.0" height="15.0" fill="rgb(237,105,105)" rx="2" ry="2" />
+<text  x="1150.55" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Thread::last_handle_mark (1 samples, 0.09%)</title><rect x="952.3" y="933" width="1.1" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="955.30" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::try_inline (1 samples, 0.09%)</title><rect x="124.6" y="917" width="1.1" height="15.0" fill="rgb(185,185,53)" rx="2" ry="2" />
+<text  x="127.60" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::javaTimeNanos (50 samples, 4.50%)</title><rect x="1048.9" y="901" width="53.0" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="1051.87" y="911.5" >libjv..</text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="709" width="1.1" height="15.0" fill="rgb(208,63,63)" rx="2" ry="2" />
+<text  x="1181.33" y="719.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::iterate_all_blocks (1 samples, 0.09%)</title><rect x="124.6" y="805" width="1.1" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="127.60" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ValueRecorder&lt;_jobject*&gt;::find_index (1 samples, 0.09%)</title><rect x="12.1" y="949" width="1.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="15.12" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="837" width="1.1" height="15.0" fill="rgb(202,202,59)" rx="2" ry="2" />
+<text  x="116.99" y="847.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/ingestor/service/DataJoinService:::handleSource (1 samples, 0.09%)</title><rect x="1175.1" y="805" width="1.1" height="15.0" fill="rgb(80,227,80)" rx="2" ry="2" />
+<text  x="1178.14" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Unique_Node_List::push (1 samples, 0.09%)</title><rect x="112.9" y="965" width="1.1" height="15.0" fill="rgb(229,229,69)" rx="2" ry="2" />
+<text  x="115.93" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ScopedFence&lt;(ScopedFenceType)0&gt;::ScopedFence (1 samples, 0.09%)</title><rect x="457.8" y="869" width="1.1" height="15.0" fill="rgb(225,225,68)" rx="2" ry="2" />
+<text  x="460.81" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`OopMapValue::write_on (1 samples, 0.09%)</title><rect x="125.7" y="901" width="1.0" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="128.67" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (1 samples, 0.09%)</title><rect x="33.3" y="997" width="1.1" height="15.0" fill="rgb(187,187,54)" rx="2" ry="2" />
+<text  x="36.35" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="773" width="1.1" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="116.99" y="783.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/metrics/stats/Meter:::record (1 samples, 0.09%)</title><rect x="1156.0" y="885" width="1.1" height="15.0" fill="rgb(57,206,57)" rx="2" ry="2" />
+<text  x="1159.04" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThreadStatusChanger::~JavaThreadStatusChanger (1 samples, 0.09%)</title><rect x="364.4" y="949" width="1.1" height="15.0" fill="rgb(225,225,68)" rx="2" ry="2" />
+<text  x="367.42" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScanWalker::alloc_free_reg (1 samples, 0.09%)</title><rect x="126.7" y="949" width="1.1" height="15.0" fill="rgb(175,175,50)" rx="2" ry="2" />
+<text  x="129.73" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::Optimize (45 samples, 4.05%)</title><rect x="68.4" y="1061" width="47.7" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="71.36" y="1071.5" >libj..</text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (7 samples, 0.63%)</title><rect x="116.1" y="1045" width="7.4" height="15.0" fill="rgb(208,208,62)" rx="2" ry="2" />
+<text  x="119.12" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`IndexSet::insert (2 samples, 0.18%)</title><rect x="55.6" y="965" width="2.2" height="15.0" fill="rgb(177,177,50)" rx="2" ry="2" />
+<text  x="58.63" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`elapsedTimer::start (1 samples, 0.09%)</title><rect x="1174.1" y="933" width="1.0" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="1177.08" y="943.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/KafkaConsumer:::pollOnce (3 samples, 0.27%)</title><rect x="1161.3" y="965" width="3.2" height="15.0" fill="rgb(105,250,105)" rx="2" ry="2" />
+<text  x="1164.35" y="975.5" ></text>
+</g>
+<g >
+<title>reactor/core/publisher/FluxPublishOn$PublishOnSubscriber:::runAsync (3 samples, 0.27%)</title><rect x="1175.1" y="917" width="3.2" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="1178.14" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::javaTimeNanos (1 samples, 0.09%)</title><rect x="1101.9" y="917" width="1.1" height="15.0" fill="rgb(202,202,60)" rx="2" ry="2" />
+<text  x="1104.92" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStatistics::monitor_wait_begin (2 samples, 0.18%)</title><rect x="1039.3" y="933" width="2.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="1042.32" y="943.5" ></text>
+</g>
+<g >
+<title>jdk/internal/misc/Unsafe:::park (2 samples, 0.18%)</title><rect x="1186.8" y="965" width="2.1" height="15.0" fill="rgb(104,249,104)" rx="2" ry="2" />
+<text  x="1189.82" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`MemNode::all_controls_dominate (1 samples, 0.09%)</title><rect x="114.0" y="645" width="1.1" height="15.0" fill="rgb(180,180,52)" rx="2" ry="2" />
+<text  x="116.99" y="655.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/ingestor/service/DataJoinService$$Lambda$196/46215311:::run (2 samples, 0.18%)</title><rect x="1165.6" y="981" width="2.1" height="15.0" fill="rgb(100,246,100)" rx="2" ry="2" />
+<text  x="1168.59" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (3 samples, 0.27%)</title><rect x="118.2" y="821" width="3.2" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="121.24" y="831.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::javaTimeNanos (75 samples, 6.74%)</title><rect x="504.5" y="869" width="79.6" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="507.50" y="879.5" >libjvm.dy..</text>
+</g>
+<g >
+<title>libjvm.dylib`SimpleThresholdPolicy::common(bool (SimpleThresholdPolicy::*) (1 samples, 0.09%)</title><rect x="1155.0" y="773" width="1.0" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="1157.98" y="783.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compilation::Compilation (5 samples, 0.45%)</title><rect x="124.6" y="1077" width="5.3" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="127.60" y="1087.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::poll_bit (1 samples, 0.09%)</title><rect x="1034.0" y="917" width="1.1" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="1037.01" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`os::is_MP (1 samples, 0.09%)</title><rect x="1035.1" y="917" width="1.0" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="1038.07" y="927.5" ></text>
+</g>
+<g >
+<title>java/lang/StringBuilder:::append (1 samples, 0.09%)</title><rect x="1162.4" y="741" width="1.1" height="15.0" fill="rgb(69,218,69)" rx="2" ry="2" />
+<text  x="1165.41" y="751.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::is_terminated (14 samples, 1.26%)</title><rect x="455.7" y="917" width="14.8" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="458.68" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseConservativeCoalesce::update_ifg (3 samples, 0.27%)</title><rect x="55.6" y="981" width="3.2" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="58.63" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LoadNode::Ideal (1 samples, 0.09%)</title><rect x="112.9" y="1013" width="1.1" height="15.0" fill="rgb(218,218,65)" rx="2" ry="2" />
+<text  x="115.93" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::assign_reg_num(GrowableArray (1 samples, 0.09%)</title><rect x="127.8" y="981" width="1.0" height="15.0" fill="rgb(222,222,67)" rx="2" ry="2" />
+<text  x="130.79" y="991.5" ></text>
+</g>
+<g >
+<title>SafeFetchN (1 samples, 0.09%)</title><rect x="1145.4" y="869" width="1.1" height="15.0" fill="rgb(229,93,93)" rx="2" ry="2" />
+<text  x="1148.43" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GrowableArray&lt;ciTypeFlow::Block*&gt;::GrowableArray (1 samples, 0.09%)</title><rect x="116.1" y="837" width="1.1" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="119.12" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConstantPool::klass_at_if_loaded (1 samples, 0.09%)</title><rect x="122.5" y="853" width="1.0" height="15.0" fill="rgb(204,204,60)" rx="2" ry="2" />
+<text  x="125.48" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* Atomic::load&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1032.9" y="853" width="1.1" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="1035.95" y="863.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::poll (11 samples, 0.99%)</title><rect x="1147.6" y="933" width="11.6" height="15.0" fill="rgb(64,212,64)" rx="2" ry="2" />
+<text  x="1150.55" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`elapsedTimer::stop (94 samples, 8.45%)</title><rect x="488.6" y="901" width="99.7" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="491.58" y="911.5" >libjvm.dylib..</text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::remove_bound_register_from_interfering_live_ranges (1 samples, 0.09%)</title><rect x="38.7" y="1013" width="1.0" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="41.65" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadsListHandle::cv_internal_thread_to_JavaThread (1 samples, 0.09%)</title><rect x="1148.6" y="853" width="1.1" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="1151.62" y="863.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`__error (4 samples, 0.36%)</title><rect x="732.6" y="917" width="4.3" height="15.0" fill="rgb(232,97,97)" rx="2" ry="2" />
+<text  x="735.64" y="927.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/network/Selector:::poll (2 samples, 0.18%)</title><rect x="1156.0" y="917" width="2.2" height="15.0" fill="rgb(108,253,108)" rx="2" ry="2" />
+<text  x="1159.04" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Monitor::lock_without_safepoint_check (1 samples, 0.09%)</title><rect x="1186.8" y="901" width="1.1" height="15.0" fill="rgb(192,192,56)" rx="2" ry="2" />
+<text  x="1189.82" y="911.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`mach_absolute_time (4 samples, 0.36%)</title><rect x="584.1" y="869" width="4.2" height="15.0" fill="rgb(243,112,112)" rx="2" ry="2" />
+<text  x="587.08" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* OrderAccess::load_acquire&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1013.8" y="901" width="1.1" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="1016.85" y="911.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::hasPendingRequests (1 samples, 0.09%)</title><rect x="1160.3" y="901" width="1.0" height="15.0" fill="rgb(75,223,75)" rx="2" ry="2" />
+<text  x="1163.29" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::Parse (1 samples, 0.09%)</title><rect x="118.2" y="469" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="121.24" y="479.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::pollNoWakeup (6 samples, 0.54%)</title><rect x="1182.6" y="1029" width="6.3" height="15.0" fill="rgb(77,224,77)" rx="2" ry="2" />
+<text  x="1185.57" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::Code_Gen (55 samples, 4.95%)</title><rect x="10.0" y="1061" width="58.4" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="13.00" y="1071.5" >libjvm..</text>
+</g>
+<g >
+<title>libjvm.dylib`os::javaTimeNanos (1 samples, 0.09%)</title><rect x="1174.1" y="901" width="1.0" height="15.0" fill="rgb(193,193,56)" rx="2" ry="2" />
+<text  x="1177.08" y="911.5" ></text>
+</g>
+<g >
+<title>reactor/core/publisher/FluxPublishOn$PublishOnSubscriber:::run (3 samples, 0.27%)</title><rect x="1175.1" y="933" width="3.2" height="15.0" fill="rgb(223,223,67)" rx="2" ry="2" />
+<text  x="1178.14" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Unique_Node_List::pop (1 samples, 0.09%)</title><rect x="115.1" y="1029" width="1.0" height="15.0" fill="rgb(181,181,52)" rx="2" ry="2" />
+<text  x="118.05" y="1039.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter$FormatSpecifier:::print (1 samples, 0.09%)</title><rect x="1162.4" y="773" width="1.1" height="15.0" fill="rgb(82,230,82)" rx="2" ry="2" />
+<text  x="1165.41" y="783.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::flatten_alias_type (1 samples, 0.09%)</title><rect x="69.4" y="949" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="72.42" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::set_early_ctrl (3 samples, 0.27%)</title><rect x="75.8" y="1013" width="3.2" height="15.0" fill="rgb(180,180,52)" rx="2" ry="2" />
+<text  x="78.79" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;int, OrderAccess::PlatformOrderedLoad&lt;4ul, (ScopedFenceType)0&gt;, void&gt;::operator() (10 samples, 0.90%)</title><rect x="457.8" y="885" width="10.6" height="15.0" fill="rgb(184,184,53)" rx="2" ry="2" />
+<text  x="460.81" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1166.7" y="901" width="1.0" height="15.0" fill="rgb(211,67,67)" rx="2" ry="2" />
+<text  x="1169.65" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (3 samples, 0.27%)</title><rect x="118.2" y="789" width="3.2" height="15.0" fill="rgb(195,195,57)" rx="2" ry="2" />
+<text  x="121.24" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="341" width="1.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="121.24" y="351.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/ingestor/service/DataJoinService:::runDLQ (2 samples, 0.18%)</title><rect x="1165.6" y="965" width="2.1" height="15.0" fill="rgb(96,242,96)" rx="2" ry="2" />
+<text  x="1168.59" y="975.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient:::poll (3 samples, 0.27%)</title><rect x="1161.3" y="949" width="3.2" height="15.0" fill="rgb(54,203,54)" rx="2" ry="2" />
+<text  x="1164.35" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaCalls::call_virtual (998 samples, 89.75%)</title><rect x="131.0" y="1093" width="1059.0" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="133.97" y="1103.5" >libjvm.dylib`JavaCalls::call_virtual</text>
+</g>
+<g >
+<title>libjvm.dylib`TypeInstPtr::xmeet_helper (1 samples, 0.09%)</title><rect x="118.2" y="69" width="1.1" height="15.0" fill="rgb(188,188,55)" rx="2" ry="2" />
+<text  x="121.24" y="79.5" ></text>
+</g>
+<g >
+<title>java/util/Formatter:::parse (1 samples, 0.09%)</title><rect x="1159.2" y="853" width="1.1" height="15.0" fill="rgb(80,227,80)" rx="2" ry="2" />
+<text  x="1162.23" y="863.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="677" width="1.1" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="121.24" y="687.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::compute_initial_block_pressure (1 samples, 0.09%)</title><rect x="32.3" y="1013" width="1.0" height="15.0" fill="rgb(213,213,63)" rx="2" ry="2" />
+<text  x="35.28" y="1023.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/spi/AbstractLogger:::tryLogMessage (1 samples, 0.09%)</title><rect x="1178.3" y="725" width="1.1" height="15.0" fill="rgb(64,213,64)" rx="2" ry="2" />
+<text  x="1181.33" y="735.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaThread::is_Java_thread (2 samples, 0.18%)</title><rect x="1019.2" y="917" width="2.1" height="15.0" fill="rgb(201,201,59)" rx="2" ry="2" />
+<text  x="1022.15" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ConnectionGraph::process_call_arguments (1 samples, 0.09%)</title><rect x="70.5" y="1013" width="1.0" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="73.49" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::ins_req (1 samples, 0.09%)</title><rect x="16.4" y="981" width="1.0" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="19.37" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::schedule_early (1 samples, 0.09%)</title><rect x="19.6" y="1013" width="1.0" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="22.55" y="1023.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1164.5" y="789" width="1.1" height="15.0" fill="rgb(248,119,119)" rx="2" ry="2" />
+<text  x="1167.53" y="799.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`JavaCalls::call_helper (998 samples, 89.75%)</title><rect x="131.0" y="1077" width="1059.0" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="133.97" y="1087.5" >libjvm.dylib`JavaCalls::call_helper</text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (2 samples, 0.18%)</title><rect x="118.2" y="757" width="2.2" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="121.24" y="767.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InterfaceSupport::serialize_thread_state_internal (3 samples, 0.27%)</title><rect x="435.5" y="933" width="3.2" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="438.52" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCFG::schedule_late (1 samples, 0.09%)</title><rect x="20.6" y="1013" width="1.1" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="23.61" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ParseGenerator::generate (1 samples, 0.09%)</title><rect x="118.2" y="245" width="1.1" height="15.0" fill="rgb(198,198,58)" rx="2" ry="2" />
+<text  x="121.24" y="255.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`void volatile* Atomic::load&lt;void volatile*&gt; (1 samples, 0.09%)</title><rect x="1173.0" y="869" width="1.1" height="15.0" fill="rgb(188,188,54)" rx="2" ry="2" />
+<text  x="1176.02" y="879.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStatistics::check_and_reset_count (1 samples, 0.09%)</title><rect x="483.3" y="901" width="1.0" height="15.0" fill="rgb(226,226,68)" rx="2" ry="2" />
+<text  x="486.27" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom_no_update (11 samples, 0.99%)</title><rect x="91.7" y="949" width="11.7" height="15.0" fill="rgb(217,217,65)" rx="2" ry="2" />
+<text  x="94.71" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseCCP::analyze (1 samples, 0.09%)</title><rect x="71.5" y="1045" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="74.55" y="1055.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="965" width="1.1" height="15.0" fill="rgb(212,68,68)" rx="2" ry="2" />
+<text  x="1181.33" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::local_poll_armed (8 samples, 0.72%)</title><rect x="1025.5" y="917" width="8.5" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="1028.52" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::build_loop_late_post (24 samples, 2.16%)</title><rect x="81.1" y="1013" width="25.5" height="15.0" fill="rgb(219,219,66)" rx="2" ry="2" />
+<text  x="84.10" y="1023.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`Atomic::LoadImpl&lt;void volatile*, OrderAccess::PlatformOrderedLoad&lt;8ul, (ScopedFenceType)0&gt;, void&gt;::operator() (1 samples, 0.09%)</title><rect x="1173.0" y="885" width="1.1" height="15.0" fill="rgb(188,188,55)" rx="2" ry="2" />
+<text  x="1176.02" y="895.5" ></text>
+</g>
+<g >
+<title>Interpreter (2 samples, 0.18%)</title><rect x="1182.6" y="1013" width="2.1" height="15.0" fill="rgb(221,81,81)" rx="2" ry="2" />
+<text  x="1185.57" y="1023.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/NetworkClient:::doSend (1 samples, 0.09%)</title><rect x="1155.0" y="901" width="1.0" height="15.0" fill="rgb(63,212,63)" rx="2" ry="2" />
+<text  x="1157.98" y="911.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom_no_update (2 samples, 0.18%)</title><rect x="103.4" y="965" width="2.1" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="106.38" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseConservativeCoalesce::copy_copy (3 samples, 0.27%)</title><rect x="55.6" y="997" width="3.2" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="58.63" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SafepointMechanism::block_if_requested (1 samples, 0.09%)</title><rect x="950.2" y="933" width="1.0" height="15.0" fill="rgb(222,222,67)" rx="2" ry="2" />
+<text  x="953.18" y="943.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/common/utils/LogContext$LocationAwareKafkaLogger:::debug (1 samples, 0.09%)</title><rect x="1152.9" y="837" width="1.0" height="15.0" fill="rgb(65,213,65)" rx="2" ry="2" />
+<text  x="1155.86" y="847.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::resolve_data_flow (1 samples, 0.09%)</title><rect x="128.8" y="997" width="1.1" height="15.0" fill="rgb(186,186,54)" rx="2" ry="2" />
+<text  x="131.85" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`subL_rRegNode::out_RegMask (1 samples, 0.09%)</title><rect x="67.3" y="1029" width="1.1" height="15.0" fill="rgb(183,183,53)" rx="2" ry="2" />
+<text  x="70.30" y="1039.5" ></text>
+</g>
+<g >
+<title>libsystem_kernel.dylib`mach_absolute_time (23 samples, 2.07%)</title><rect x="559.7" y="853" width="24.4" height="15.0" fill="rgb(247,119,119)" rx="2" ry="2" />
+<text  x="562.68" y="863.5" >l..</text>
+</g>
+<g >
+<title>libjvm.dylib`OopMap::deep_copy (1 samples, 0.09%)</title><rect x="125.7" y="933" width="1.0" height="15.0" fill="rgb(197,197,58)" rx="2" ry="2" />
+<text  x="128.67" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl_no_update_helper (1 samples, 0.09%)</title><rect x="77.9" y="949" width="1.1" height="15.0" fill="rgb(213,213,64)" rx="2" ry="2" />
+<text  x="80.91" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIFG::Compute_Effective_Degree (1 samples, 0.09%)</title><rect x="58.8" y="1029" width="1.1" height="15.0" fill="rgb(190,190,55)" rx="2" ry="2" />
+<text  x="61.81" y="1039.5" ></text>
+</g>
+<g >
+<title>com/google/common/collect/AbstractIterator:::hasNext (1 samples, 0.09%)</title><rect x="1166.7" y="949" width="1.0" height="15.0" fill="rgb(62,211,62)" rx="2" ry="2" />
+<text  x="1169.65" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Unsafe_Park(JNIEnv_*, _jobject*, unsigned char, long) (2 samples, 0.18%)</title><rect x="1186.8" y="949" width="2.1" height="15.0" fill="rgb(206,59,59)" rx="2" ry="2" />
+<text  x="1189.82" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`GraphBuilder::iterate_all_blocks (1 samples, 0.09%)</title><rect x="124.6" y="965" width="1.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="127.60" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScan::assign_reg_num (1 samples, 0.09%)</title><rect x="127.8" y="997" width="1.0" height="15.0" fill="rgb(196,196,57)" rx="2" ry="2" />
+<text  x="130.79" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIterGVN::optimize (5 samples, 0.45%)</title><rect x="110.8" y="1045" width="5.3" height="15.0" fill="rgb(225,225,68)" rx="2" ry="2" />
+<text  x="113.81" y="1055.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ObjectMonitor::TrySpin (1 samples, 0.09%)</title><rect x="1145.4" y="885" width="1.1" height="15.0" fill="rgb(194,194,57)" rx="2" ry="2" />
+<text  x="1148.43" y="895.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node_Array::operator[] (1 samples, 0.09%)</title><rect x="77.9" y="933" width="1.1" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="80.91" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LoadKlassNode::Opcode (1 samples, 0.09%)</title><rect x="107.6" y="1013" width="1.1" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="110.63" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (6 samples, 0.54%)</title><rect x="117.2" y="933" width="6.3" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="120.18" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl_no_update (3 samples, 0.27%)</title><rect x="75.8" y="965" width="3.2" height="15.0" fill="rgb(183,183,52)" rx="2" ry="2" />
+<text  x="78.79" y="975.5" ></text>
+</g>
+<g >
+<title>Interpreter (1 samples, 0.09%)</title><rect x="1178.3" y="613" width="1.1" height="15.0" fill="rgb(252,125,125)" rx="2" ry="2" />
+<text  x="1181.33" y="623.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LinearScanWalker::activate_current (1 samples, 0.09%)</title><rect x="126.7" y="965" width="1.1" height="15.0" fill="rgb(215,215,64)" rx="2" ry="2" />
+<text  x="129.73" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_all_blocks (1 samples, 0.09%)</title><rect x="118.2" y="373" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="121.24" y="383.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseChaitin::interfere_with_live (5 samples, 0.45%)</title><rect x="33.3" y="1013" width="5.4" height="15.0" fill="rgb(206,206,61)" rx="2" ry="2" />
+<text  x="36.35" y="1023.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Compile::Process_OopMap_Node (1 samples, 0.09%)</title><rect x="12.1" y="1029" width="1.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="15.12" y="1039.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`SimpleThresholdPolicy::method_invocation_event (1 samples, 0.09%)</title><rect x="1155.0" y="805" width="1.0" height="15.0" fill="rgb(221,221,66)" rx="2" ry="2" />
+<text  x="1157.98" y="815.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::get_ctrl (3 samples, 0.27%)</title><rect x="75.8" y="981" width="3.2" height="15.0" fill="rgb(199,199,58)" rx="2" ry="2" />
+<text  x="78.79" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadBlockInVM::ThreadBlockInVM (9 samples, 0.81%)</title><rect x="687.0" y="917" width="9.6" height="15.0" fill="rgb(189,189,55)" rx="2" ry="2" />
+<text  x="690.01" y="927.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`LoadNode::split_through_phi (1 samples, 0.09%)</title><rect x="112.9" y="997" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="115.93" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::loop_predication_impl (1 samples, 0.09%)</title><rect x="72.6" y="965" width="1.1" height="15.0" fill="rgb(191,191,55)" rx="2" ry="2" />
+<text  x="75.61" y="975.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_call (1 samples, 0.09%)</title><rect x="118.2" y="181" width="1.1" height="15.0" fill="rgb(227,227,69)" rx="2" ry="2" />
+<text  x="121.24" y="191.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`InitializeNode::detect_init_independence (1 samples, 0.09%)</title><rect x="114.0" y="933" width="1.1" height="15.0" fill="rgb(211,211,63)" rx="2" ry="2" />
+<text  x="116.99" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`DebugInformationRecorder::serialize_scope_values(GrowableArray (1 samples, 0.09%)</title><rect x="12.1" y="997" width="1.1" height="15.0" fill="rgb(203,203,60)" rx="2" ry="2" />
+<text  x="15.12" y="1007.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Node::set_req (1 samples, 0.09%)</title><rect x="111.9" y="981" width="1.0" height="15.0" fill="rgb(195,195,57)" rx="2" ry="2" />
+<text  x="114.87" y="991.5" ></text>
+</g>
+<g >
+<title>org/apache/logging/log4j/spi/AbstractLogger:::logIfEnabled (1 samples, 0.09%)</title><rect x="1164.5" y="917" width="1.1" height="15.0" fill="rgb(104,249,104)" rx="2" ry="2" />
+<text  x="1167.53" y="927.5" ></text>
+</g>
+<g >
+<title>org/apache/kafka/clients/NetworkClient:::completeResponses (1 samples, 0.09%)</title><rect x="1178.3" y="981" width="1.1" height="15.0" fill="rgb(75,223,75)" rx="2" ry="2" />
+<text  x="1181.33" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`PhaseIdealLoop::idom (1 samples, 0.09%)</title><rect x="81.1" y="949" width="1.1" height="15.0" fill="rgb(179,179,51)" rx="2" ry="2" />
+<text  x="84.10" y="959.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`ThreadStateTransition::ThreadStateTransition (1 samples, 0.09%)</title><rect x="956.5" y="933" width="1.1" height="15.0" fill="rgb(228,228,69)" rx="2" ry="2" />
+<text  x="959.55" y="943.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Matcher::MStack::push (1 samples, 0.09%)</title><rect x="15.3" y="1013" width="1.1" height="15.0" fill="rgb(209,209,62)" rx="2" ry="2" />
+<text  x="18.31" y="1023.5" ></text>
+</g>
+<g >
+<title>com/pdd/service/dump/ingestor/service/DataJoinService$$Lambda$195/1630073586:::run (1 samples, 0.09%)</title><rect x="1164.5" y="981" width="1.1" height="15.0" fill="rgb(93,239,93)" rx="2" ry="2" />
+<text  x="1167.53" y="991.5" ></text>
+</g>
+<g >
+<title>libjvm.dylib`Parse::do_one_block (3 samples, 0.27%)</title><rect x="118.2" y="773" width="3.2" height="15.0" fill="rgb(200,200,59)" rx="2" ry="2" />
+<text  x="121.24" y="783.5" ></text>
+</g>
+</g>
+</svg>

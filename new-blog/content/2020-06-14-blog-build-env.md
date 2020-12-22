@@ -41,6 +41,8 @@ make html
 
 ![fontmin](https://i.loli.net/2020/06/14/Xn8b9kZDIfWoLmp.png)
 
+> 另，华戈行书字体见：http://www.foundertype.com/index.php/FontInfo/index/id/5350
+
 (3) 生成字体样式，并拷贝更新到目标主题包目录中：https://github.com/youngsterxyf/my-pelican-themes/tree/master/my-gum/static
 
 (4) 更新主题包：

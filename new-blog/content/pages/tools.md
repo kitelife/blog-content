@@ -15,6 +15,10 @@ Slug: tools
 - [httpie cheatsheet](https://devhints.io/httpie)
 - [shellcheck](https://www.shellcheck.net/)
 
+- `docker commit [container id] bwse:1.0`
+
+- `docker run -it -v /Users/xiayf:/home/xiayf bwse:1.0 /bin/bash`
+
 - 使用 pv 和 nc 传输文件并显示进度条：`pv [文件路径] | nc [服务端 ip] [服务端 nc 端口]` 
 
 - 带过滤条件和条数限制的 HBase 扫表：`scan 'ad:indexlib', {LIMIT => 10, FILTER => "SingleColumnValueFilter('meta', 'isOnline', =, 'binary:0')"}`
