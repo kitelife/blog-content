@@ -50,7 +50,7 @@ Gwen Shapira，大腕级的解决方案架构师（SA），如今 Cloudera 的�
 你应该知道：
 
 - 确保单拷贝可串行化（single-copy serialisability）的仲裁（quorum）技术。可阅读 [Skeen 的原始论文](https://ecommons.library.cornell.edu/bitstream/1813/6323/1/82-483.pdf)，但可能更建议阅读[这个 Wikipedia 词条](http://en.wikipedia.org/wiki/Quorum_(distributed_computing))。
-- 关于[两阶段提交](http://the-paper-trail.org/blog/consensus-protocols-two-phase-commit/)、[三阶段提交](http://the-paper-trail.org/blog/consensus-protocols-three-phase-commit/)和 [Paxos](http://the-paper-trail.org/blog/consensus-protocols-paxos/)算法，以及为什么它们有不同的容错性质。
+- 关于[两阶段提交](http://the-paper-trail.org/blog/consensus-protocols-two-phase-commit/)、[三阶段提交](http://the-paper-trail.org/blog/consensus-protocols-three-phase-commit/)和 [Paxos](http://the-paper-trail.org/blog/consensus-protocols-paxos/) 算法，以及为什么它们有不同的容错性质。
 - 最终一致性，及其他技术是如何以弱化对系统行为的保证为代价来尝试避免这种矛盾的。这篇 [Dynamo 论文](http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)是一个很好的起点，同时 Pat Helland 的经典之作 [Life Beyond Transactions](http://www.ics.uci.edu/~cs223/papers/cidr07p15.pdf) 也是必读的。
 
 #### 基本的原语
@@ -81,5 +81,3 @@ Gwen Shapira，大腕级的解决方案架构师（SA），如今 Cloudera 的�
 **Not Google:**
 
 [Dryad](http://research.microsoft.com/en-us/projects/dryad/eurosys07.pdf), [Cassandra](https://www.cs.cornell.edu/projects/ladis2009/papers/lakshman-ladis2009.pdf), [Ceph](http://ceph.com/papers/weil-ceph-osdi06.pdf), [RAMCloud](https://ramcloud.stanford.edu/wiki/display/ramcloud/RAMCloud+Papers), [HyperDex](http://hyperdex.org/papers/), [PNUTS](http://www.mpi-sws.org/~druschel/courses/ds/papers/cooper-pnuts.pdf)
-
-
