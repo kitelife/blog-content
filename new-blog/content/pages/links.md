@@ -28,5 +28,6 @@ Slug: links
 - [Eric Holscher](http://ericholscher.com/)
 - [有赞技术团队](https://tech.youzan.com/)
 - [江南白衣](http://calvin1978.blogcn.com/)
+- [freebsd-papers](https://papers.freebsd.org/)
 
 
