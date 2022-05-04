@@ -28,6 +28,10 @@ Slug: links
 - [Eric Holscher](http://ericholscher.com/)
 - [有赞技术团队](https://tech.youzan.com/)
 - [江南白衣](http://calvin1978.blogcn.com/)
+
+### 资料库
+
 - [freebsd-papers](https://papers.freebsd.org/)
+- [Linux Kernel Doc](https://www.kernel.org/doc/html/latest/index.html)
 
 
