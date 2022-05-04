@@ -31,7 +31,7 @@ Slug: links
 
 ### 资料库
 
-- [freebsd-papers](https://papers.freebsd.org/)
-- [Linux Kernel Doc](https://www.kernel.org/doc/html/latest/index.html)
+- [FreeBSD Presentations and Papers](https://papers.freebsd.org/)
+- [The Linux Kernel documentation](https://www.kernel.org/doc/html/latest/index.html)
 
 
