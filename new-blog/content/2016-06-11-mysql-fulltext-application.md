@@ -47,7 +47,3 @@ SELECT * FROM `apps` WHERE MATCH (seg_name) AGAINST ('%s' IN NATURAL LANGUAGE MO
 
 - [MySQL · 引擎特性 · InnoDB 全文索引简介](http://mysql.taobao.org/monthly/2015/10/01/)
 - [MySQL中文全文检索demoSQL](http://www.cnblogs.com/martinzhang/p/3220345.html)
-
-
-
-
