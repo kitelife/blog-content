@@ -15,6 +15,8 @@ Slug: tools
 - [httpie cheatsheet](https://devhints.io/httpie)
 - [shellcheck](https://www.shellcheck.net/)
 
+- 查看 yum install 安装包的安装路径（以 python 为例）：`rpm -ql python`
+
 - `docker commit [container id] bwse:1.0`
 
 - `docker run -it -v /Users/xiayf:/home/xiayf bwse:1.0 /bin/bash`

@@ -27,3 +27,8 @@ Slug: ds
 - [Notes on Distributed Systems for Young Bloods](https://www.somethingsimilar.com/2013/01/14/notes-on-distributed-systems-for-young-bloods/)
 - [Distributed systems - for fun and profit](http://book.mixu.net/distsys/) √
 - [Distributed systems theory for the distributed systems engineer](https://www.the-paper-trail.org/post/2014-08-09-distributed-systems-theory-for-the-distributed-systems-engineer/)，[中文翻译](http://blog.xiayf.cn/2014/08/10/Distributed-systems-theory-for-the-distributed-systems-engineer/) √
+- [漫谈分布式](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzU2MzY1MjQwNg==&action=getalbum&album_id=1339310291066224642&scene=173&from_msgid=2247483922&from_itemidx=1&count=3)
+
+## 链接
+
+- [PBS: Probabilistically Bounded Staleness](http://pbs.cs.berkeley.edu/)
