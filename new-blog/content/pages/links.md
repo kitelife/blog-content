@@ -23,4 +23,5 @@ Slug: links
 - [FreeBSD Presentations and Papers](https://papers.freebsd.org/)
 - [The Linux Kernel documentation](https://www.kernel.org/doc/html/latest/index.html)
 - [SaltTiger](http://www.salttiger.com/)
+- [ACM Queue](https://queue.acm.org/index.cfm)
 
