@@ -1,2 +1,2 @@
-Markdown==2.6.11
-pelican==4.0.1
+pelican==4.8.0
+Markdown==3.4.1
