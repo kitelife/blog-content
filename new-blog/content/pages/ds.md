@@ -28,6 +28,7 @@ Slug: ds
 - [Distributed systems - for fun and profit](http://book.mixu.net/distsys/) √
 - [Distributed systems theory for the distributed systems engineer](https://www.the-paper-trail.org/post/2014-08-09-distributed-systems-theory-for-the-distributed-systems-engineer/)，[中文翻译](http://blog.xiayf.cn/2014/08/10/Distributed-systems-theory-for-the-distributed-systems-engineer/) √
 - [漫谈分布式](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzU2MzY1MjQwNg==&action=getalbum&album_id=1339310291066224642&scene=173&from_msgid=2247483922&from_itemidx=1&count=3)
+- [《分布式系统模式》中文版](https://github.com/dreamhead/patterns-of-distributed-systems)
 
 ## 链接
 
