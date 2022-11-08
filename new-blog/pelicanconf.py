@@ -67,7 +67,7 @@ BAIDU_ANALYTICS_ID = '5c5d8c3fe75afeff117777b9236b96ec'
 #
 PLUGIN_PATHS = ['plugins']
 # plantuml plugin: https://github.com/getpelican/pelican-plugins/tree/master/plantuml
-PLUGINS = ['latex', 'asciidoc_reader', 'plantuml']
+PLUGINS = ['latex', 'asciidoc_reader', 'plantuml', 'pelican.plugins.graphviz']
 #
 LATEX = 'article'
 #

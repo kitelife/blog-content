@@ -1,2 +1,6 @@
 pelican==4.8.0
 Markdown==3.4.1
+# https://github.com/pelican-plugins/graphviz
+pelican-graphviz
+# https://github.com/pelican-plugins/pdf
+pelican-pdf
