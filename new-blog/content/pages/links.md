@@ -24,4 +24,5 @@ Slug: links
 - [The Linux Kernel documentation](https://www.kernel.org/doc/html/latest/index.html)
 - [SaltTiger](http://www.salttiger.com/)
 - [ACM Queue](https://queue.acm.org/index.cfm)
+- [Berkeley EECS Technical Reports](https://www2.eecs.berkeley.edu/Pubs/TechRpts/)
 
