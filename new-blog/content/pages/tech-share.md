@@ -2,6 +2,10 @@ Title: 技术分享
 Date: 2014-11-14
 Slug: tech-share
 
+#### 大数据基础
+
+[幻灯片](https://pan.baidu.com/s/135cnRtAX7WyAY5qRLBDEvw)，提取码：feyd，2021-08-31
+
 #### 安全指数Go实践总结
 
 [幻灯片](https://pan.baidu.com/s/1qXAHt16)，2017-04-26，百度安全事业部
