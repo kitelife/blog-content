@@ -4,6 +4,8 @@ Author: xiayf
 Slug: team-dev-process-std
 Tags: 开发, 流程, 规范
 
+*本文原是针对实际工作中团队的情况编写的一份流程规范说明，隐去敏感信息之后存放于此。*
+
 ![](https://s2.loli.net/2023/04/05/wQ9bOaXyNiCjh5H.jpg)
 
 开发流程规范 是一种团队文化，也是服务和业务稳定性的基本保障线。
@@ -58,12 +60,16 @@ Tags: 开发, 流程, 规范
 
 - [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)、[Google C++ 风格指南](https://zh-google-styleguide.readthedocs.io/en/latest/google-cpp-styleguide/contents/)
 - 代码规范/风格检查工具：[cpplint](https://github.com/cpplint/cpplint)
-  - Google 官方提供的工具，用于检测 C++ 代码是否符合 Google C++ Style Guide
-  - VS Code 插件：[cpplint - Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=mine.cpplint)
-  - Vim 插件：[vim-syntastic/syntastic: Syntax checking hacks for vim (github.com)](https://github.com/vim-syntastic/syntastic)
-  - Clion 插件：[CLion-cpplint - CLion Plugin | Marketplace (jetbrains.com)](https://plugins.jetbrains.com/plugin/7871-clion-cpplint)
+    - Google 官方提供的工具，用于检测 C++ 代码是否符合 Google C++ Style Guide
+    - VS Code 插件：[cpplint - Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=mine.cpplint)
+    - Vim 插件：[vim-syntastic/syntastic: Syntax checking hacks for vim (github.com)](https://github.com/vim-syntastic/syntastic)
+    - Clion 插件：[CLion-cpplint - CLion Plugin | Marketplace (jetbrains.com)](https://plugins.jetbrains.com/plugin/7871-clion-cpplint)
 - 代码格式化工具：[clang-format](https://clang.llvm.org/docs/ClangFormat.html)
-  - 项目根目录下放置 .clang-format 文件，编辑器/IDE 配置成编码时自动格式化或者保存时自动格式化：
+    - 项目根目录下放置 .clang-format 文件，编辑器/IDE 配置成编码时自动格式化或者保存时自动格式化：
+    - VS Code 插件：[Clang-Format - Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=xaver.clang-format)
+    - Vim 集成：[https://clang.llvm.org/docs/ClangFormat.html#vim-integration](https://clang.llvm.org/docs/ClangFormat.html#vim-integration)
+    - Clion 集成：[https://clang.llvm.org/docs/ClangFormat.html#clion-integration ](https://clang.llvm.org/docs/ClangFormat.html#clion-integration)
+
 ```text
 ---
 BasedOnStyle: Google
@@ -85,19 +91,16 @@ AlignTrailingComments: true
 BinPackParameters: false
 AllowAllParametersOfDeclarationOnNextLine: false
 ```
-  - VS Code 插件：[Clang-Format - Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=xaver.clang-format)
-  - Vim 集成：[https://clang.llvm.org/docs/ClangFormat.html#vim-integration](https://clang.llvm.org/docs/ClangFormat.html#vim-integration)
-  - Clion 集成：[https://clang.llvm.org/docs/ClangFormat.html#clion-integration ](https://clang.llvm.org/docs/ClangFormat.html#clion-integration)
 
 #### 2.1.2 Java
 
 - [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)
 - [IDE - Jetbrains IDEA](https://www.jetbrains.com/idea/)
-  - 下载代码风格定义文件：[intellij-java-google-style.xml](https://raw.githubusercontent.com/google/styleguide/gh-pages/intellij-java-google-style.xml)
-  - 导入 IDEA
+    - 下载代码风格定义文件：[intellij-java-google-style.xml](https://raw.githubusercontent.com/google/styleguide/gh-pages/intellij-java-google-style.xml)
+    - 导入 IDEA
 ![](https://s2.loli.net/2023/04/05/IZHhXTGDQnqiPAl.jpg)
-  - 安装 Save Actions 插件
-  - 配置 Save Actions 插件
+    - 安装 Save Actions 插件
+    - 配置 Save Actions 插件
 ![](https://s2.loli.net/2023/04/05/iHYtmc7Lah1OXEs.jpg)
 
 #### 2.1.3 Python
@@ -105,32 +108,36 @@ AllowAllParametersOfDeclarationOnNextLine: false
 - Python 3 + [venv 虚拟环境](https://docs.python.org/3/library/venv.html)
 - [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
 - 代码规范/风格检查工具：[pylint](https://pylint.pycqa.org/en/latest/)、[https://google.github.io/styleguide/pyguide.html#21-lint](https://google.github.io/styleguide/pyguide.html#21-lint)
-  - Vim 集成：[vim-syntastic/syntastic: Syntax checking hacks for vim (github.com)](https://github.com/vim-syntastic/syntastic)
-  - VS Code 集成：[Linting Python in Visual Studio Code](https://code.visualstudio.com/docs/python/linting#_pylint)
-  - PyCharm 插件：[Pylint - IntelliJ IDEA & PyCharm Plugin | Marketplace (jetbrains.com)](https://plugins.jetbrains.com/plugin/11084-pylint)
+    - Vim 集成：[vim-syntastic/syntastic: Syntax checking hacks for vim (github.com)](https://github.com/vim-syntastic/syntastic)
+    - VS Code 集成：[Linting Python in Visual Studio Code](https://code.visualstudio.com/docs/python/linting#_pylint)
+    - PyCharm 插件：[Pylint - IntelliJ IDEA & PyCharm Plugin | Marketplace (jetbrains.com)](https://plugins.jetbrains.com/plugin/11084-pylint)
 - 代码格式化工具：[yapf](https://github.com/google/yapf/)
-  - Vim 集成：[https://github.com/google/yapf/tree/main/plugins#vim](https://github.com/google/yapf/tree/main/plugins#vim)
-  - VS Code 集成：[Editing Python Code in Visual Studio Code](https://code.visualstudio.com/docs/python/editing#_formatting)
-  - PyCharm 集成：[How do I install yapf in pycharm · Issue #631 · google/yapf (github.com)](https://github.com/google/yapf/issues/631)
+    - Vim 集成：[https://github.com/google/yapf/tree/main/plugins#vim](https://github.com/google/yapf/tree/main/plugins#vim)
+    - VS Code 集成：[Editing Python Code in Visual Studio Code](https://code.visualstudio.com/docs/python/editing#_formatting)
+    - PyCharm 集成：[How do I install yapf in pycharm · Issue #631 · google/yapf (github.com)](https://github.com/google/yapf/issues/631)
 
 ### 2.2 代码分支管理
 
 > 共识：一个代码库一个主分支；所有开发分支在测试/实验验证之后都需要合入主分支
 
 （强制）基本的 git 工作流：
+
 - 每项开发工作，都从主分支签出一个（公共）开发分支
 - 如果是多人协作的开发工作，则基于新签出的公共开发分支，每个人各自签出个人的开发分支，进行独立开发
 - 个人开发自测完成后，合入公共开发分支，进行集成测试联调
 - 如果走实验流程，则使用（公共）开发分支的 sandbox 镜像部署实验集群
 - 实验推全反转下线后，（公共）开发分支合入主分支，并基于主分支上的正式 tag 镜像发布基准集群
+
 （建议）分支命名规范：
+
 - （公共）开发分支：
-  - 常规需求开发分支：feature/[目标服务名]-[文档 ID]
-  - 紧急需求开发分支：urgent/[目标服务名]-[文档 ID]
-  - 紧急修复开发分支：hotfix/[目标服务名]-[文档 ID]
+    - 常规需求开发分支：feature/[目标服务名]-[文档 ID]
+    - 紧急需求开发分支：urgent/[目标服务名]-[文档 ID]
+    - 紧急修复开发分支：hotfix/[目标服务名]-[文档 ID]
 - 个人开发分支：在（公共）开发分支后带上个人 ID，示例：feature/[目标服务名]-[文档 ID]-[个人 ID]
 - 对紧急需求和紧急修复开发分支，可以先创建一个文档，拿到文档 ID，内容可能来不及写得非常完善，但之后应该进行补充完善
 - 不符合规范的开发分支，不能推送到远程代码库（不能对团队其他人可见），通过 git hook 来强行限制
+
 （建议）所有（公共）开发分支、（需要代码评审的）个人开发分支，都应该创建对应的 MR，邀请其他人进行代码评审时，提供对应的 MR
 
 ### 2.3 Commit 规范
@@ -144,6 +151,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 > 共识：质量把关、经验传承
 
 从团队和长远来看，Code Review 的重要性再怎么强调都不为过。
+
 - （强制）每个开发分支的工作在开实验或者合入主分支之前，都需要邀请至少 3 名资深同学进行 Code Review
 - （强制）评审员在确认没有意见或者所有优化意见都已得到合理解决后对 MR 进行点赞 👍
 - （强制）开发分支/MR 需要攒 3 个以上的点赞才能开实验流量或者合入主分支
@@ -166,6 +174,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 ### 2.5 CI 约束
 
 因当前一个代码库支持产出不同服务的二进制程序和 Docker 镜像，为加速 CI，使用了条件编译，根据不同条件触发不同 CI 流水线。
+
 - 根据分支名的目标服务名对应触发不同 CI 流水线（all 则触发所有的 CI 流水线）
 - MR 合入 master 分支时，必须触发所有 CI 流水线。
 
@@ -174,11 +183,11 @@ AllowAllParametersOfDeclarationOnNextLine: false
 ### 2.6 版本 Tag 规范
 
 - 正式tag
-  - 只能在 master 分支上打 tag，tag 命名规范为 v主版本号.次版本号.修订号，基于 语义化版本
-  - tag 内容必须包含必要的描述性信息，声明此次变更的内容，包含相关的 MR、文档链接
-  - hotfix 版本 tag，应该以 fix 之前的 tag 为前缀，加上“-hotfix” 后缀，示例：v10.0.1-hotfix；如果对同一个 tag 的代码发生了不只一次 hotfix，则继续补充上秒级的时间戳作为后缀
+    - 只能在 master 分支上打 tag，tag 命名规范为 v主版本号.次版本号.修订号，基于 语义化版本
+    - tag 内容必须包含必要的描述性信息，声明此次变更的内容，包含相关的 MR、文档链接
+    - hotfix 版本 tag，应该以 fix 之前的 tag 为前缀，加上“-hotfix” 后缀，示例：v10.0.1-hotfix；如果对同一个 tag 的代码发生了不只一次 hotfix，则继续补充上秒级的时间戳作为后缀
 - 实验tag
-  - 在分支上打tag进行线上实验开量，tag命名规范：exp.文档编号.迭代版本号，示例：exp.w88.0
+    - 在分支上打tag进行线上实验开量，tag命名规范：exp.文档编号.迭代版本号，示例：exp.w88.0
 
 ### 2.7 监控打点和日志
 
@@ -186,20 +195,20 @@ AllowAllParametersOfDeclarationOnNextLine: false
 
 - （建议）多使用 ROC 打点，借助多维数据分析，方便问题定位分析
 - （强制）注意日志级别（DEBUG、INFO、ERROR、FATAL）的语义
-  - 不要使用非 DEBUG 级别来输出 DEBUG 日志
-  - 注意 FATAL 的实际影响
-  - 不同环境使用不同的日志级别，生产环境不要输出 DEBUG 日志，https://github.com/google/glog#setting-flags 
-  - （建议）使用 glog vlog 来进一步控制不同环境/场景下的日志量，https://github.com/google/glog#verbose-logging
+    - 不要使用非 DEBUG 级别来输出 DEBUG 日志
+    - 注意 FATAL 的实际影响
+    - 不同环境使用不同的日志级别，生产环境不要输出 DEBUG 日志，https://github.com/google/glog#setting-flags 
+    - （建议）使用 glog vlog 来进一步控制不同环境/场景下的日志量，https://github.com/google/glog#verbose-logging
 - （强制）不要默默地失败
-  - ERROR/WARNING 日志
-  - Event 打点
+    - ERROR/WARNING 日志
+    - Event 打点
 - （建议）使用 Event 打点充分表现输入量、输入类型、输出量、变化趋势
-  - 请求 QPS、增量消息 TPS、不同类型增量消息的 TPS、。。。
-  - 基准数据的统计计数
-  - 请求来源：客户端类型粒度、客户端 ip 粒度、场景维度、媒体维度、。。。
-  - trigger 数、各类过滤器数目统计
-  - 检索结果数量、截断后/实际返回给客户端的结果数量
-  - 各类过滤器的过滤量
+    - 请求 QPS、增量消息 TPS、不同类型增量消息的 TPS、。。。
+    - 基准数据的统计计数
+    - 请求来源：客户端类型粒度、客户端 ip 粒度、场景维度、媒体维度、。。。
+    - trigger 数、各类过滤器数目统计
+    - 检索结果数量、截断后/实际返回给客户端的结果数量
+    - 各类过滤器的过滤量
 - （建议）使用 Transaction 表现耗时分布 - 整体耗时多少、时间都花在哪些环节（包括 RPC 框架内的等待时延）：Tt = T1 + T2 + ...
 - （建议）使用 Metric 表现跨节点/集群/场景的业务指标变化趋势
 - （建议）性能考虑，打点接口调用次数应小于等于请求 QPS、消息 TPS
@@ -216,8 +225,8 @@ AllowAllParametersOfDeclarationOnNextLine: false
 
 - 明确单元测试与集成测试的区别，[单元测试 - 维基百科，自由的百科全书 (wikipedia.org)](https://zh.wikipedia.org/wiki/%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95)
 - 单元测试的作用：
-  - 验证某个逻辑的当前实验是否符合预期
-  - 更重要的是对以后的代码变更可能造成的非预期影响/破坏进行一定的防御
+    - 验证某个逻辑的当前实验是否符合预期
+    - 更重要的是对以后的代码变更可能造成的非预期影响/破坏进行一定的防御
 - GoogleTest，用好 Mocking
 
 （强制）CI 强制要求新增/变更代码的测试覆盖率。（基于 .gitlab-ci.yml 配置强行约束？）
@@ -225,23 +234,22 @@ AllowAllParametersOfDeclarationOnNextLine: false
 ### 3.2 集成测试
 
 - （强制）任何代码变更，都必须经过自测/集成测试
-  - 任务可以正常跑起来，变更的逻辑已生效，产出的结果确认符合预期
-  - 服务可以正常运行起来，变更的逻辑已生效，可以正常加载数据/索引，请求响应的结果确认符合预期
+    - 任务可以正常跑起来，变更的逻辑已生效，产出的结果确认符合预期
+    - 服务可以正常运行起来，变更的逻辑已生效，可以正常加载数据/索引，请求响应的结果确认符合预期
 - （建议）测试环境/工具
-  - 独立的测试验证集群
-  - 开发机环境下的 Docker 环境 + 代码库中的 Dockerfile
-    - docker build -t image-name .
-    - docker run -dp 8003:8003 image-name
-  - 易用的脚本 - 一键启动+索引数据加载、易用的客户端工具、易用的数据校验工具
+    - 独立的测试验证集群
+    - 开发机环境下的 Docker 环境 + 代码库中的 Dockerfile
+        - docker build -t image-name .
+        - docker run -dp 8003:8003 image-name
+    - 易用的脚本 - 一键启动+索引数据加载、易用的客户端工具、易用的数据校验工具
 
 ### 3.3 批量 Diff 测试
 
-（强制）
+（强制）如果代码变更影响了索引或者检索逻辑，则应该进行充分的 diff：
 
-如果代码变更影响了索引或者检索逻辑，则应该进行充分的 diff：
 - 如果走实验，则部署新实验集群后开实验之前，进行 基准集群 VS. 实验集群 的请求结果 diff
 - 如果不走实验，则基于独立的测试验证集群，进行 生产集群 VS. 测试集群 的请求结果 diff
-  - diff 完成后，即刻释放测试集群资源
+    - diff 完成后，即刻释放测试集群资源
 - 对于 diff 结果，不管最后的 diff 率有多小，只要有 diff，就需要确认 diff 来源/原因是否符合预期
 - diff 的不同请求数量必须达到 1000 以上
 - 统一使用易用且功能完善的 diff 工具
@@ -249,8 +257,8 @@ AllowAllParametersOfDeclarationOnNextLine: false
 
 ## 四、发布
 
-（强制）流量高峰期不发版
-（建议）周五晚上及周末不发版
+- （强制）流量高峰期不发版
+- （建议）周五晚上及周末不发版
 
 ### 4.1 发布之前
 
